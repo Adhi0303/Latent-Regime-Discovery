@@ -7,3 +7,5 @@ scikit-learn
 hmmlearn
 streamlit
 jupyter
+seaborn
+scipy

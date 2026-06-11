@@ -3,94 +3,75 @@ import numpy as np
 import os
 import joblib
 from hmmlearn.hmm import GaussianHMM
-
-def load_data(pca_path="data/features_pca_robust.csv", orig_path="data/features_sp500.csv"):
-    """
-    Loads PCA components and original feature data.
-    """
-    print(f"Loading PCA features from {pca_path}...")
-    df_pca = pd.read_csv(pca_path, index_col='Date', parse_dates=True)
-    
-    print(f"Loading original features from {orig_path}...")
-    df_orig = pd.read_csv(orig_path, index_col='Date', parse_dates=True)
-    
-    # Ensure indices match
-    common_idx = df_pca.index.intersection(df_orig.index)
-    df_pca = df_pca.loc[common_idx]
-    df_orig = df_orig.loc[common_idx]
-    
-    return df_pca, df_orig
+from src.models.baseline_clustering import load_data
 
 def train_hmm(df_pca, df_orig, n_components=3, random_state=42):
     """
-    Trains a Gaussian Hidden Markov Model (HMM) on PCA features.
-    Sorts states by their mean Volatility_21d (low vol -> high vol) for consistency.
+    Trains a Gaussian Hidden Markov Model on PCA features.
+    Sorts hidden states by their mean Volatility_21d (low vol -> high vol).
     """
-    print(f"\nTraining Gaussian HMM model with {n_components} components...")
+    print("\nTraining Hidden Markov Model (HMM)...")
     
-    # Setup HMM
-    hmm = GaussianHMM(
-        n_components=n_components, 
-        covariance_type="full", 
-        n_iter=100, 
-        random_state=random_state
-    )
+    # GaussianHMM expects array-like of shape (n_samples, n_features)
+    # We use full covariance matrix to capture feature interactions
+    hmm_model = GaussianHMM(n_components=n_components, 
+                            covariance_type="full", 
+                            random_state=random_state, 
+                            n_iter=100)
     
-    # Fit model
-    hmm.fit(df_pca)
+    hmm_model.fit(df_pca)
     
-    # Predict states (Viterbi path) and state probabilities
-    raw_labels = hmm.predict(df_pca)
-    probs = hmm.predict_proba(df_pca)
+    # Predict hidden states and their probabilities
+    raw_labels = hmm_model.predict(df_pca)
+    probs = hmm_model.predict_proba(df_pca)
     
-    # Map states to be sorted by average Volatility_21d (low vol = 0, high vol = 2)
+    # Map hidden states to be sorted by average Volatility_21d 
+    # (low vol = 0 [Bull], high vol = 2 [Bear/Crisis])
     vol_col = 'Volatility_21d'
     temp_df = pd.DataFrame({'label': raw_labels, 'vol': df_orig[vol_col]})
     mean_vols = temp_df.groupby('label')['vol'].mean().sort_values()
     
-    # Construction of permutation list: perm[new_label] = old_label
-    # i.e. perm[0] is the old label index of the lowest vol state
-    perm = list(mean_vols.index)
+    # Map old labels to sorted labels
+    label_map = {old_label: new_label for new_label, old_label in enumerate(mean_vols.index)}
+    sorted_labels = np.array([label_map[l] for l in raw_labels])
     
-    # Create the label map: old_label -> new_label
-    label_map = {old_label: new_label for new_label, old_label in enumerate(perm)}
+    # Re-order probabilities according to sorted components
+    sorted_probs = np.zeros_like(probs)
+    for old_l, new_l in label_map.items():
+        sorted_probs[:, new_l] = probs[:, old_l]
+        
+    # Re-order transition matrix
+    old_transmat = hmm_model.transmat_
+    sorted_transmat = np.zeros_like(old_transmat)
+    for old_i, new_i in label_map.items():
+        for old_j, new_j in label_map.items():
+            sorted_transmat[new_i, new_j] = old_transmat[old_i, old_j]
+            
+    # Store mappings and sorted objects inside model
+    hmm_model.label_map_ = label_map
+    hmm_model.sorted_transmat_ = sorted_transmat
     
-    # Sort the model parameters in-place
-    hmm.startprob_ = hmm.startprob_[perm]
-    hmm.means_ = hmm.means_[perm]
-    hmm.covars_ = hmm.covars_[perm]
-    
-    # Sort transition matrix: transmat_[old_idx, old_idx] -> permute both rows and columns
-    hmm.transmat_ = hmm.transmat_[perm][:, perm]
-    
-    # Verify by predicting again with the sorted model
-    sorted_labels = hmm.predict(df_pca)
-    sorted_probs = hmm.predict_proba(df_pca)
-    
-    # Calculate sorted mean vols to double check
-    sorted_mean_vols = pd.DataFrame({'label': sorted_labels, 'vol': df_orig[vol_col]}).groupby('label')['vol'].mean()
-    
-    print(f"HMM states sorted by mean volatility: {sorted_mean_vols.to_dict()}")
-    return sorted_labels, sorted_probs, hmm
+    print(f"HMM hidden states sorted by mean volatility: {mean_vols.to_dict()}")
+    return sorted_labels, sorted_probs, hmm_model
 
 def run_hmm_pipeline(pca_path="data/features_pca_robust.csv", 
                      orig_path="data/features_sp500.csv", 
                      output_dir="data"):
     """
-    Runs the HMM pipeline, saves the model and the outputs.
+    Runs HMM training, saves the model and the state predictions.
     """
     df_pca, df_orig = load_data(pca_path, orig_path)
     
-    # 1. Train and Sort HMM
+    # 1. Train HMM
     hmm_labels, hmm_probs, hmm_model = train_hmm(df_pca, df_orig)
     
     # 2. Save Model
     os.makedirs('models', exist_ok=True)
-    model_output_path = 'models/hmm_model.pkl'
-    joblib.dump(hmm_model, model_output_path)
-    print(f"Saved trained HMM model to {model_output_path}")
+    model_path = 'models/hmm_model.pkl'
+    joblib.dump(hmm_model, model_path)
+    print(f"\nSaved trained HMM model to {model_path}")
     
-    # 3. Save Results
+    # 3. Save Outputs
     df_results = pd.DataFrame(index=df_pca.index)
     df_results['Close'] = df_orig['Close']
     df_results['HMM_Regime'] = hmm_labels
@@ -110,13 +91,11 @@ def run_hmm_pipeline(pca_path="data/features_pca_robust.csv",
         subset = df_orig[df_results['HMM_Regime'] == r]
         print(f"Regime {r}: Days={len(subset)}, Mean Return={subset['Log_Return'].mean()*100:.4f}%, Mean Volatility={subset['Volatility_21d'].mean()*100:.2f}%")
         
-    # 5. Print Transition Matrix
-    print("\n--- HMM Transition Probability Matrix ---")
-    states = ['Regime 0 (Bull)', 'Regime 1 (Sideways)', 'Regime 2 (Bear)']
-    transmat_df = pd.DataFrame(hmm_model.transmat_, index=states, columns=states)
-    print(transmat_df.round(4))
+    print("\n--- Transition Matrix (Sorted) ---")
+    print("Rows: From Regime | Cols: To Regime")
+    print(np.round(hmm_model.sorted_transmat_, 3))
     
-    return df_pca, df_orig, df_results
+    return df_pca, df_orig, df_results, hmm_model
 
 if __name__ == "__main__":
     run_hmm_pipeline()

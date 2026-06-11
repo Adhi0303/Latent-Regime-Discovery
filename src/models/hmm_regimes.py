@@ -54,20 +54,30 @@ def train_hmm(df_pca, df_orig, n_components=3, random_state=42):
     print(f"HMM hidden states sorted by mean volatility: {mean_vols.to_dict()}")
     return sorted_labels, sorted_probs, hmm_model
 
-def run_hmm_pipeline(pca_path="data/features_pca_robust.csv", 
-                     orig_path="data/features_sp500.csv", 
-                     output_dir="data"):
+def run_hmm_pipeline(ticker="^GSPC", pca_path=None, orig_path=None, output_dir=None):
     """
     Runs HMM training, saves the model and the state predictions.
     """
+    if pca_path is None:
+        safe_ticker = ticker.replace("-", "_")
+        pca_path = f"data/{safe_ticker}/features_pca_robust.csv"
+    if orig_path is None:
+        safe_ticker = ticker.replace("-", "_")
+        orig_path = f"data/{safe_ticker}/features.csv"
+    if output_dir is None:
+        safe_ticker = ticker.replace("-", "_")
+        output_dir = f"data/{safe_ticker}"
+
     df_pca, df_orig = load_data(pca_path, orig_path)
     
     # 1. Train HMM
     hmm_labels, hmm_probs, hmm_model = train_hmm(df_pca, df_orig)
       
     # 2. Save Model
-    os.makedirs('models', exist_ok=True)
-    model_path = 'models/hmm_model.pkl'
+    safe_ticker = ticker.replace("-", "_")
+    models_dir = f'models/{safe_ticker}'
+    os.makedirs(models_dir, exist_ok=True)
+    model_path = f'{models_dir}/hmm_model.pkl'
     joblib.dump(hmm_model, model_path)
     print(f"\nSaved trained HMM model to {model_path}")
     

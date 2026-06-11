@@ -65,24 +65,33 @@ def apply_pca(df_scaled, n_components=0.95):
     
     return df_pca, pca
 
-def run_preprocessing_pipeline(input_path="data/features_sp500.csv", output_dir="data"):
+def run_preprocessing_pipeline(ticker="^GSPC", input_path=None, output_dir=None):
     """
     End-to-end preprocessing pipeline.
     """
+    if input_path is None:
+        safe_ticker = ticker.replace("-", "_")
+        input_path = f"data/{safe_ticker}/features.csv"
+    if output_dir is None:
+        safe_ticker = ticker.replace("-", "_")
+        output_dir = f"data/{safe_ticker}"
+
     df_original, df_modeling = load_and_clean_features(input_path)
     
     # 1. Scale
     df_std, df_robust, std_scaler, robust_scaler = scale_features(df_modeling)
     
     # Save scalers for production use later
-    os.makedirs('models', exist_ok=True)
-    joblib.dump(std_scaler, 'models/std_scaler.pkl')
-    joblib.dump(robust_scaler, 'models/robust_scaler.pkl')
+    safe_ticker = ticker.replace("-", "_")
+    models_dir = f'models/{safe_ticker}'
+    os.makedirs(models_dir, exist_ok=True)
+    joblib.dump(std_scaler, os.path.join(models_dir, 'std_scaler.pkl'))
+    joblib.dump(robust_scaler, os.path.join(models_dir, 'robust_scaler.pkl'))
     
     # 2. PCA (using robust scaled data since financial data has fat tails)
     print("\nUsing Robust Scaled data for final PCA transformation...")
     df_pca_robust, pca_robust = apply_pca(df_robust, n_components=3)  # Hardcode 3 for 3D visualization options
-    joblib.dump(pca_robust, 'models/pca_robust.pkl')
+    joblib.dump(pca_robust, os.path.join(models_dir, 'pca_robust.pkl'))
     
     # 3. Save processed datasets
     os.makedirs(output_dir, exist_ok=True)

@@ -30,15 +30,22 @@ models = {}
 
 @app.on_event("startup")
 def load_models_on_startup():
-    """Loads pre-trained models on startup."""
-    models_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', 'models'))
-    try:
-        models['scaler'] = joblib.load(os.path.join(models_dir, "robust_scaler.pkl"))
-        models['pca'] = joblib.load(os.path.join(models_dir, "pca_robust.pkl"))
-        models['hmm'] = joblib.load(os.path.join(models_dir, "hmm_model.pkl"))
-        print("Models loaded successfully.")
-    except Exception as e:
-        print(f"Warning: Failed to load models. {e}")
+    """Loads pre-trained models on startup for all supported tickers."""
+    models_dir_base = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', 'models'))
+    TICKERS = ["^GSPC", "BTC-USD", "TSLA", "NVDA", "BRK-B"]
+    
+    for ticker in TICKERS:
+        safe_ticker = ticker.replace("-", "_")
+        models_dir = os.path.join(models_dir_base, safe_ticker)
+        try:
+            models[ticker] = {
+                'scaler': joblib.load(os.path.join(models_dir, "robust_scaler.pkl")),
+                'pca': joblib.load(os.path.join(models_dir, "pca_robust.pkl")),
+                'hmm': joblib.load(os.path.join(models_dir, "hmm_model.pkl"))
+            }
+            print(f"Models loaded successfully for {ticker}.")
+        except Exception as e:
+            print(f"Warning: Failed to load models for {ticker}. {e}")
 
 class PredictRequest(BaseModel):
     ticker: str = "^GSPC"
@@ -53,12 +60,12 @@ def predict_regime(ticker: str = "^GSPC", period: str = "5y"):
     """
     Fetches market data, runs the HMM pipeline, and returns the regimes.
     """
-    if "hmm" not in models:
-        raise HTTPException(status_code=500, detail="Models are not loaded.")
+    if ticker not in models or "hmm" not in models[ticker]:
+        raise HTTPException(status_code=500, detail=f"Models are not loaded for {ticker}.")
         
-    scaler = models['scaler']
-    pca = models['pca']
-    hmm_model = models['hmm']
+    scaler = models[ticker]['scaler']
+    pca = models[ticker]['pca']
+    hmm_model = models[ticker]['hmm']
     
     # 1. Fetch Data
     try:
@@ -87,9 +94,18 @@ def predict_regime(ticker: str = "^GSPC", period: str = "5y"):
     X_scaled = scaler.transform(X)
     X_pca = pca.transform(X_scaled)
     
-    regime_seq = hmm_model.predict(X_pca)
-    probs = hmm_model.predict_proba(X_pca)
+    raw_regime_seq = hmm_model.predict(X_pca)
+    raw_probs = hmm_model.predict_proba(X_pca)
     
+    # Apply the volatility sorting map saved during training
+    label_map = hmm_model.label_map_
+    regime_seq = np.array([label_map[l] for l in raw_regime_seq])
+    
+    # Sort probabilities to match the mapped regimes
+    probs = np.zeros_like(raw_probs)
+    for old_l, new_l in label_map.items():
+        probs[:, new_l] = raw_probs[:, old_l]
+        
     features_df['Regime'] = regime_seq
     
     # Prepare historical data for the chart

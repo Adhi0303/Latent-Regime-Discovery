@@ -48,11 +48,18 @@ def engineer_features_df(df):
     
     return df[feature_cols]
 
-def engineer_features(input_path="data/cleaned_sp500.csv", output_path="data/features_sp500.csv"):
+def engineer_features(ticker="^GSPC", input_path=None, output_path=None):
     """
     Wrapper for offline CSV processing.
     """
-    print(f"Loading cleaned data from {input_path}...")
+    if input_path is None:
+        safe_ticker = ticker.replace("-", "_")
+        input_path = f"data/{safe_ticker}/cleaned.csv"
+    if output_path is None:
+        safe_ticker = ticker.replace("-", "_")
+        output_path = f"data/{safe_ticker}/features.csv"
+
+    print(f"Loading cleaned data for {ticker} from {input_path}...")
     if not os.path.exists(input_path):
         print(f"Error: {input_path} does not exist. Please run data/cleaning.py first.")
         return None

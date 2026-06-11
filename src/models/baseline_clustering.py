@@ -79,12 +79,20 @@ def train_gmm(df_pca, df_orig, n_components=3, random_state=42):
     print(f"GMM components sorted by mean volatility: {mean_vols.to_dict()}")
     return sorted_labels, sorted_probs, gmm
 
-def run_clustering_pipeline(pca_path="data/features_pca_robust.csv", 
-                            orig_path="data/features_sp500.csv", 
-                            output_dir="data"):
+def run_clustering_pipeline(ticker="^GSPC", pca_path=None, orig_path=None, output_dir=None):
     """
     Runs K-Means and GMM, saves models and outputs.
     """
+    if pca_path is None:
+        safe_ticker = ticker.replace("-", "_")
+        pca_path = f"data/{safe_ticker}/features_pca_robust.csv"
+    if orig_path is None:
+        safe_ticker = ticker.replace("-", "_")
+        orig_path = f"data/{safe_ticker}/features.csv"
+    if output_dir is None:
+        safe_ticker = ticker.replace("-", "_")
+        output_dir = f"data/{safe_ticker}"
+
     df_pca, df_orig = load_data(pca_path, orig_path)
     
     # 1. Train K-Means
@@ -94,10 +102,12 @@ def run_clustering_pipeline(pca_path="data/features_pca_robust.csv",
     gmm_labels, gmm_probs, gmm_model = train_gmm(df_pca, df_orig)
     
     # 3. Save Models
-    os.makedirs('models', exist_ok=True)
-    joblib.dump(kmeans_model, 'models/kmeans_model.pkl')
-    joblib.dump(gmm_model, 'models/gmm_model.pkl')
-    print("\nSaved trained models to models/ directory.")
+    safe_ticker = ticker.replace("-", "_")
+    models_dir = f'models/{safe_ticker}'
+    os.makedirs(models_dir, exist_ok=True)
+    joblib.dump(kmeans_model, os.path.join(models_dir, 'kmeans_model.pkl'))
+    joblib.dump(gmm_model, os.path.join(models_dir, 'gmm_model.pkl'))
+    print(f"\nSaved trained models to {models_dir}/ directory.")
     
     # 4. Save Outputs
     df_results = pd.DataFrame(index=df_pca.index)

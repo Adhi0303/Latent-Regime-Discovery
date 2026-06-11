@@ -1,15 +1,22 @@
 import pandas as pd
 import os
 
-def clean_market_data(input_path="data/raw_sp500.csv", output_path="data/cleaned_sp500.csv"):
+def clean_market_data(ticker="^GSPC", input_path=None, output_path=None):
     """
     Cleans the raw market data by handling missing values, 
     zero-volume days, and ensuring a continuous timeline.
     """
-    print(f"Loading raw data from {input_path}...")
+    if input_path is None:
+        safe_ticker = ticker.replace("-", "_")
+        input_path = f"data/{safe_ticker}/raw.csv"
+    if output_path is None:
+        safe_ticker = ticker.replace("-", "_")
+        output_path = f"data/{safe_ticker}/cleaned.csv"
+        
+    print(f"Loading raw data for {ticker} from {input_path}...")
     
     if not os.path.exists(input_path):
-        print(f"Error: {input_path} does not exist. Please run data_ingestion.py first.")
+        print(f"Error: {input_path} does not exist. Please run ingestion.py first.")
         return None
         
     # Modern yfinance saves a multi-level header, we read it and drop the 'Ticker' level

@@ -9,9 +9,11 @@ import { Activity, TrendingUp, AlertTriangle, ShieldAlert } from "lucide-react";
 export default function Dashboard() {
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [selectedTicker, setSelectedTicker] = useState("^GSPC");
 
   useEffect(() => {
-    fetch("http://localhost:8000/api/predict?ticker=^GSPC&period=5y")
+    setLoading(true);
+    fetch(`http://localhost:8000/api/predict?ticker=${selectedTicker}&period=5y`)
       .then((res) => res.json())
       .then((json) => {
         setData(json);
@@ -21,7 +23,7 @@ export default function Dashboard() {
         console.error(err);
         setLoading(false);
       });
-  }, []);
+  }, [selectedTicker]);
 
   if (loading) {
     return (
@@ -88,12 +90,25 @@ export default function Dashboard() {
           <h1 className="text-3xl font-bold tracking-tight text-white">Latent Regime Discovery</h1>
           <p className="text-sm text-gray-400 mt-1">Autonomous Quantitative Strategy Dashboard</p>
         </div>
-        <div className="flex items-center gap-2 rounded-full bg-blue-500/10 px-4 py-2 border border-blue-500/20">
-          <span className="relative flex h-3 w-3">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
-            <span className="relative inline-flex rounded-full h-3 w-3 bg-blue-500"></span>
-          </span>
-          <span className="text-sm font-medium text-blue-400">Live API Connection</span>
+        <div className="flex items-center gap-4">
+          <select 
+            className="bg-[#18181B] border border-white/10 text-white text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2 outline-none cursor-pointer"
+            value={selectedTicker}
+            onChange={(e) => setSelectedTicker(e.target.value)}
+          >
+            <option value="^GSPC">S&P 500 (^GSPC)</option>
+            <option value="BTC-USD">Bitcoin (BTC-USD)</option>
+            <option value="TSLA">Tesla (TSLA)</option>
+            <option value="NVDA">Nvidia (NVDA)</option>
+            <option value="BRK-B">Berkshire Hathaway (BRK-B)</option>
+          </select>
+          <div className="flex items-center gap-2 rounded-full bg-blue-500/10 px-4 py-2 border border-blue-500/20">
+            <span className="relative flex h-3 w-3">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-3 w-3 bg-blue-500"></span>
+            </span>
+            <span className="text-sm font-medium text-blue-400 hidden sm:inline">Live API Connection</span>
+          </div>
         </div>
       </header>
 
@@ -168,7 +183,7 @@ export default function Dashboard() {
       <div className="rounded-2xl bg-[#18181B] border border-white/5 p-6 shadow-xl">
         <div className="mb-6">
           <h3 className="text-lg font-bold text-white">Historical Regime Map</h3>
-          <p className="text-sm text-gray-500">S&P 500 Price overlaid with AI-detected hidden states.</p>
+          <p className="text-sm text-gray-500">{data.ticker} Price overlaid with AI-detected hidden states.</p>
         </div>
         
         <div className="h-[500px] w-full">

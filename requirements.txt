@@ -11,3 +11,6 @@ seaborn
 scipy
 
 shap
+fastapi
+uvicorn
+pydantic

@@ -64,7 +64,7 @@ def run_hmm_pipeline(pca_path="data/features_pca_robust.csv",
     
     # 1. Train HMM
     hmm_labels, hmm_probs, hmm_model = train_hmm(df_pca, df_orig)
-    
+      
     # 2. Save Model
     os.makedirs('models', exist_ok=True)
     model_path = 'models/hmm_model.pkl'

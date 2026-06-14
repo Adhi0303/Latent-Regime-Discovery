@@ -1,0 +1,13 @@
+FROM python:3.10-slim
+
+WORKDIR /app
+
+COPY requirements.txt .
+
+# We only need requests and schedule for this tiny container
+RUN pip install --no-cache-dir requests schedule
+
+COPY src/bot/scheduler.py .
+
+# Run the scheduler loop
+CMD ["python", "scheduler.py"]

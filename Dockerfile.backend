@@ -1,0 +1,24 @@
+FROM python:3.10-slim
+
+WORKDIR /app
+
+# Install system dependencies (build-essential for compiling C extensions like numpy/scipy)
+RUN apt-get update && apt-get install -y build-essential curl && rm -rf /var/lib/apt/lists/*
+
+COPY requirements.txt .
+
+# Install dependencies (use --no-cache-dir to keep image small)
+# Using torch CPU-only version for cheap cloud deployment
+RUN pip install torch==2.2.0 --index-url https://download.pytorch.org/whl/cpu
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy all source code
+COPY . .
+
+# Ensure the app can write to models and database
+RUN mkdir -p /app/models
+
+EXPOSE 8000
+
+# Start FastAPI using uvicorn
+CMD ["uvicorn", "src.api.server:app", "--host", "0.0.0.0", "--port", "8000"]

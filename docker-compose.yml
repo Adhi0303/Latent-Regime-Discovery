@@ -1,0 +1,35 @@
+version: '3.8'
+
+services:
+  api-server:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./models:/app/models
+      - ./trading_bot.db:/app/trading_bot.db
+    restart: always
+
+  web-ui:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.frontend
+    ports:
+      - "3000:3000"
+    environment:
+      - NEXT_PUBLIC_API_URL=http://localhost:8000
+    depends_on:
+      - api-server
+    restart: always
+
+  scheduler:
+    build:
+      context: .
+      dockerfile: Dockerfile.scheduler
+    environment:
+      - API_URL=http://api-server:8000
+    depends_on:
+      - api-server
+    restart: always

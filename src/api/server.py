@@ -13,6 +13,8 @@ from typing import List, Dict, Any
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
 
 from src.features.engineering import engineer_features_df
+from src.data.news_scraper import fetch_recent_news
+from src.models.sentiment_agent import get_sentiment_analyst
 
 app = FastAPI(title="Latent Regime Discovery API")
 
@@ -46,6 +48,13 @@ def load_models_on_startup():
             print(f"Models loaded successfully for {ticker}.")
         except Exception as e:
             print(f"Warning: Failed to load models for {ticker}. {e}")
+            
+    print("Loading FinBERT sentiment model...")
+    try:
+        get_sentiment_analyst()
+        print("FinBERT loaded successfully.")
+    except Exception as e:
+        print(f"Warning: Failed to load FinBERT. {e}")
 
 class PredictRequest(BaseModel):
     ticker: str = "^GSPC"
@@ -137,6 +146,329 @@ def predict_regime(ticker: str = "^GSPC", period: str = "5y"):
     }
     
     return response
+
+@app.get("/api/backtest")
+def get_backtest(ticker: str = "^GSPC"):
+    """
+    Simulates a $10,000 portfolio over the available history.
+    Buy & Hold vs AI Strategy (moves to cash during Bear Regimes).
+    """
+    safe_ticker = ticker.replace("-", "_")
+    models_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', 'models', safe_ticker))
+    data_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', 'data', safe_ticker))
+    
+    try:
+        scaler = joblib.load(os.path.join(models_dir, "robust_scaler.pkl"))
+        pca = joblib.load(os.path.join(models_dir, "pca_robust.pkl"))
+        hmm = joblib.load(os.path.join(models_dir, "hmm_model.pkl"))
+        
+        features_path = os.path.join(data_dir, "features.csv")
+        if not os.path.exists(features_path):
+            raise HTTPException(status_code=404, detail="Historical data not found. Run engineering.py")
+            
+        df = pd.read_csv(features_path, index_col='Date', parse_dates=True)
+        
+        feature_cols = ['Log_Return', 'Volatility_21d', 'Momentum_21d', 'MA_Dist_50d', 'Drawdown_252d', 'Volume_Ratio_21d']
+        X = df[feature_cols].copy()
+        
+        # We need to fill NaNs if any exist to prevent HMM crash
+        X.ffill(inplace=True)
+        X.fillna(0, inplace=True)
+        
+        X_scaled = scaler.transform(X)
+        X_pca = pca.transform(X_scaled)
+        
+        raw_regime_seq = hmm.predict(X_pca)
+        label_map = hmm.label_map_
+        regime_seq = np.array([label_map[l] for l in raw_regime_seq])
+        
+        df['Regime'] = regime_seq
+        
+        buy_hold_val = 10000.0
+        ai_val = 10000.0
+        
+        bh_peak = buy_hold_val
+        ai_peak = ai_val
+        
+        bh_max_dd = 0.0
+        ai_max_dd = 0.0
+        
+        history = []
+        
+        for i in range(1, len(df)):
+            date_str = df.index[i].strftime('%Y-%m-%d')
+            daily_return = float(df['Return'].iloc[i])
+            
+            # Predict using T-1 regime to avoid lookahead bias
+            prev_regime = df['Regime'].iloc[i-1]
+            
+            buy_hold_val *= (1 + daily_return)
+            
+            # Regime 2 is Bear Market (High Volatility, Negative Return)
+            if prev_regime == 2:
+                # Move to cash (0% return)
+                pass
+            else:
+                ai_val *= (1 + daily_return)
+                
+            # Drawdown calcs
+            if buy_hold_val > bh_peak: bh_peak = buy_hold_val
+            if ai_val > ai_peak: ai_peak = ai_val
+            
+            bh_dd = (buy_hold_val - bh_peak) / bh_peak
+            ai_dd = (ai_val - ai_peak) / ai_peak
+            
+            if bh_dd < bh_max_dd: bh_max_dd = bh_dd
+            if ai_dd < ai_max_dd: ai_max_dd = ai_dd
+            
+            # Sub-sample data to prevent massive payloads (take every 5th day, or end of month)
+            # Or just send everything and let recharts handle it. Let's sample 1 per week approx for speed
+            if i % 5 == 0 or i == len(df) - 1:
+                history.append({
+                    "date": date_str,
+                    "buy_hold": round(buy_hold_val, 2),
+                    "ai_strategy": round(ai_val, 2)
+                })
+                
+        bh_total_ret = ((buy_hold_val - 10000) / 10000) * 100
+        ai_total_ret = ((ai_val - 10000) / 10000) * 100
+        alpha = ai_total_ret - bh_total_ret
+        
+        return {
+            "ticker": ticker,
+            "metrics": {
+                "buy_hold_return": round(bh_total_ret, 2),
+                "ai_return": round(ai_total_ret, 2),
+                "alpha": round(alpha, 2),
+                "buy_hold_max_dd": round(bh_max_dd * 100, 2),
+                "ai_max_dd": round(ai_max_dd * 100, 2)
+            },
+            "history": history
+        }
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Backtest failed: {e}")
+
+@app.get("/api/bot/portfolio")
+def get_bot_portfolio():
+    """Returns the live unified portfolio status, holdings, and global ledger."""
+    import sqlite3
+    db_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', 'trading_bot.db'))
+    if not os.path.exists(db_path):
+        return {"cash_balance": 10000.0, "holdings": {}, "ledger": []}
+        
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+    
+    # Portfolio Status
+    cursor.execute('SELECT cash_balance FROM portfolio_status WHERE id = 1')
+    row = cursor.fetchone()
+    cash_balance = row[0] if row else 10000.0
+    
+    # Holdings
+    cursor.execute('SELECT ticker, amount FROM holdings')
+    holdings_rows = cursor.fetchall()
+    holdings = [{"ticker": r[0], "amount": r[1]} for r in holdings_rows]
+    
+    # Ledger
+    cursor.execute('''
+        SELECT timestamp, ticker, action, shares_traded, price, cash_after, portfolio_value_after 
+        FROM ledger ORDER BY timestamp DESC LIMIT 100
+    ''')
+    ledger_rows = cursor.fetchall()
+    ledger = []
+    for r in ledger_rows:
+        ledger.append({
+            "timestamp": r[0],
+            "ticker": r[1],
+            "action": r[2],
+            "shares_traded": r[3],
+            "price": r[4],
+            "cash_after": r[5],
+            "portfolio_value_after": r[6]
+        })
+        
+    conn.close()
+    return {"cash_balance": cash_balance, "holdings": holdings, "ledger": ledger}
+
+@app.get("/api/bot/predictions")
+def get_bot_predictions(ticker: str = "^GSPC"):
+    """Returns the historical Predicted vs Actual prices and MAE."""
+    import sqlite3
+    db_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', 'trading_bot.db'))
+    if not os.path.exists(db_path):
+        return {"predictions": [], "mae": 0.0}
+        
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+    cursor.execute('''
+        SELECT timestamp, predicted_close, actual_close, error_pct 
+        FROM predictions WHERE ticker = ? ORDER BY timestamp ASC
+    ''', (ticker,))
+    rows = cursor.fetchall()
+    conn.close()
+    
+    predictions = []
+    total_error = 0
+    count = 0
+    
+    for r in rows:
+        predictions.append({
+            "timestamp": r[0],
+            "predicted_close": r[1],
+            "actual_close": r[2]
+        })
+        if r[3] is not None:
+            total_error += r[3]
+            count += 1
+            
+    mae = (total_error / count) if count > 0 else 0.0
+    
+    return {"predictions": predictions, "mae": mae}
+
+@app.post("/api/bot/run")
+def force_bot_run():
+    """WebHook to manually trigger the multi-asset paper trading bot's daily cycle."""
+    from src.bot.paper_trader import run_multi_asset_cycle
+    try:
+        res = run_multi_asset_cycle()
+        return res
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Bot cycle failed: {e}")
+
+@app.post("/api/bot/retrain")
+def force_retrain_check():
+    """WebHook to manually trigger the Auto-Retrainer Heartbeat Monitor."""
+    from src.bot.retrainer import check_and_retrain
+    try:
+        res = check_and_retrain()
+        return res
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Retrainer check failed: {e}")
+
+@app.get("/api/sentiment")
+def get_sentiment(ticker: str = "^GSPC"):
+    """
+    Fetches the latest news for the ticker and scores it using FinBERT.
+    """
+    try:
+        news = fetch_recent_news(ticker, limit=5)
+        analyst = get_sentiment_analyst()
+        macro_score, scored_news = analyst.analyze_headlines(news)
+        
+        return {
+            "ticker": ticker,
+            "macro_score": macro_score,
+            "news": scored_news
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Sentiment analysis failed: {e}")
+
+@app.get("/api/forecast")
+def get_forecast(ticker: str = "^GSPC"):
+    """
+    Predicts tomorrow's closing price using the PyTorch LSTM model.
+    Then, it uses an Ensemble approach to adjust the prediction based on today's FinBERT Sentiment.
+    """
+    import torch
+    from src.models.train_lstm import LSTMForecast
+    
+    models_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', 'models', ticker.replace('-', '_')))
+    
+    try:
+        # Load scalers and model
+        scaler_X = joblib.load(os.path.join(models_dir, "lstm_scaler_X.pkl"))
+        scaler_y = joblib.load(os.path.join(models_dir, "lstm_scaler_y.pkl"))
+        
+        # Determine input size from scaler
+        input_size = scaler_X.n_features_in_
+        device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+        
+        lstm_model = LSTMForecast(input_size=input_size).to(device)
+        lstm_model.load_state_dict(torch.load(os.path.join(models_dir, "lstm_model.pth"), map_location=device))
+        lstm_model.eval()
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"LSTM Models not found for {ticker}. Did you run train_lstm.py? {e}")
+
+    try:
+        # 1. We need the last 21 days of features
+        # Re-use the data fetching and HMM prediction logic to build the 21-day sequence
+        raw_df = yf.download(ticker, period="6mo") # Get enough buffer for 252d drawdown if needed, or rely on available data
+        if isinstance(raw_df.columns, pd.MultiIndex):
+            raw_df.columns = raw_df.columns.get_level_values(0)
+            
+        features_df = engineer_features_df(raw_df.copy())
+        
+        # HMM Probabilities
+        scaler_hmm = models[ticker]['scaler']
+        pca_hmm = models[ticker]['pca']
+        hmm_model_obj = models[ticker]['hmm']
+        
+        X_hmm = features_df[['Log_Return', 'Volatility_21d', 'Momentum_21d', 'MA_Dist_50d', 'Drawdown_252d', 'Volume_Ratio_21d']].copy()
+        X_scaled_hmm = scaler_hmm.transform(X_hmm)
+        X_pca_hmm = pca_hmm.transform(X_scaled_hmm)
+        probabilities = hmm_model_obj.predict_proba(X_pca_hmm)
+        
+        features_df['Prob_Bull'] = probabilities[:, 0]
+        features_df['Prob_Sideways'] = probabilities[:, 1]
+        features_df['Prob_Bear'] = probabilities[:, 2]
+        
+        lstm_feature_cols = [
+            'Log_Return', 'Volatility_21d', 'Momentum_21d', 'MA_Dist_50d',
+            'Prob_Bull', 'Prob_Sideways', 'Prob_Bear'
+        ]
+        
+        # Extract the last 21 days
+        if len(features_df) < 21:
+            raise HTTPException(status_code=500, detail="Not enough data to form a 21-day sequence.")
+            
+        recent_data = features_df[lstm_feature_cols].tail(21).values
+        
+        # Scale the sequence
+        recent_data_scaled = scaler_X.transform(recent_data)
+        
+        # Convert to tensor and add batch dimension: shape (1, 21, 7)
+        seq_tensor = torch.tensor(recent_data_scaled, dtype=torch.float32).unsqueeze(0).to(device)
+        
+        # 2. Base Prediction from LSTM
+        with torch.no_grad():
+            pred_scaled = lstm_model(seq_tensor)
+            
+        # Inverse transform to get predicted Log_Return
+        predicted_log_return = scaler_y.inverse_transform(pred_scaled.cpu().numpy())[0][0]
+        
+        current_close = float(features_df['Close'].iloc[-1])
+        
+        # Convert Log_Return to expected Dollar Amount: Price_t+1 = Price_t * exp(Log_Return)
+        base_prediction = current_close * np.exp(predicted_log_return)
+        
+        # 3. Ensemble Adjustment via RAG Sentiment
+        # Get live sentiment score
+        news = fetch_recent_news(ticker, limit=5)
+        analyst = get_sentiment_analyst()
+        macro_score, _ = analyst.analyze_headlines(news)
+        
+        # Calculate adjustment
+        # e.g., A +1.0 sentiment could boost the price prediction by +0.5% (a realistic single-day drift)
+        # A -1.0 sentiment drops it by -0.5%
+        adjustment_multiplier = 1.0 + (macro_score * 0.005) 
+        
+        final_prediction = base_prediction * adjustment_multiplier
+        
+        pct_change = ((final_prediction - current_close) / current_close) * 100
+        
+        return {
+            "ticker": ticker,
+            "current_price": current_close,
+            "base_lstm_prediction": float(base_prediction),
+            "sentiment_score": macro_score,
+            "final_prediction": float(final_prediction),
+            "predicted_pct_change": float(pct_change)
+        }
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Forecasting pipeline failed: {e}")
 
 if __name__ == "__main__":
     import uvicorn

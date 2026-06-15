@@ -1,3 +1,13 @@
+---
+title: Latent Regime Discovery Api
+emoji: 📈
+colorFrom: blue
+colorTo: indigo
+sdk: docker
+app_port: 7860
+pinned: false
+---
+
 # Latent Regime Discovery & Autonomous Quantitative Hedge Fund
 
 ![Python](https://img.shields.io/badge/Python-3.10+-blue.svg)

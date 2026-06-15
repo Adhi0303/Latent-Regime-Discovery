@@ -482,9 +482,10 @@ export default function Dashboard() {
                         contentStyle={{ backgroundColor: '#27272A', borderColor: '#3F3F46', borderRadius: '8px', color: '#fff' }}
                         itemStyle={{ color: '#fff' }}
                         labelStyle={{ color: '#A1A1AA', marginBottom: '4px' }}
-                        formatter={(value: number, name: string) => {
-                          if (name === 'ai_strategy') return [`$${value.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`, 'AI Strategy'];
-                          if (name === 'buy_hold') return [`$${value.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`, 'Buy & Hold'];
+                        formatter={(value: any, name: any) => {
+                          const numValue = Number(value);
+                          if (name === 'ai_strategy') return [`$${numValue.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`, 'AI Strategy'];
+                          if (name === 'buy_hold') return [`$${numValue.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`, 'Buy & Hold'];
                           return [value, name];
                         }}
                       />
@@ -666,9 +667,10 @@ export default function Dashboard() {
                         contentStyle={{ backgroundColor: '#27272A', borderColor: '#3F3F46', borderRadius: '8px', color: '#fff' }}
                         itemStyle={{ color: '#fff' }}
                         labelStyle={{ color: '#A1A1AA', marginBottom: '4px' }}
-                        formatter={(value: number, name: string) => {
-                          if (name === 'predicted_close') return [`$${value.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`, 'AI Prediction'];
-                          if (name === 'actual_close') return [`$${value.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`, 'Actual Price'];
+                        formatter={(value: any, name: any) => {
+                          const numValue = Number(value);
+                          if (name === 'predicted_close') return [`$${numValue.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`, 'AI Prediction'];
+                          if (name === 'actual_close') return [`$${numValue.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`, 'Actual Price'];
                           return [value, name];
                         }}
                       />

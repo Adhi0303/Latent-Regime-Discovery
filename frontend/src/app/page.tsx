@@ -385,7 +385,7 @@ export default function Dashboard() {
                     contentStyle={{ backgroundColor: '#27272A', borderColor: '#3F3F46', borderRadius: '8px', color: '#fff' }}
                     itemStyle={{ color: '#60A5FA' }}
                     labelStyle={{ color: '#A1A1AA', marginBottom: '4px' }}
-                    formatter={(value: number) => [`$${value.toFixed(2)}`, 'Price']}
+                    formatter={(value: any) => [`$${Number(value).toFixed(2)}`, 'Price']}
                   />
                   
                   {/* Draw Regime Backgrounds */}

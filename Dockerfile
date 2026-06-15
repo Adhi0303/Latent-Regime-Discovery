@@ -1,22 +1,26 @@
 FROM python:3.10-slim
 
-WORKDIR /app
-
-# Install system dependencies (build-essential for compiling C extensions like numpy/scipy)
+# Install system dependencies
 RUN apt-get update && apt-get install -y build-essential curl && rm -rf /var/lib/apt/lists/*
 
-COPY requirements.txt .
+# Hugging Face Spaces requires a non-root user (id 1000)
+RUN useradd -m -u 1000 user
+USER user
+ENV PATH="/home/user/.local/bin:$PATH"
 
-# Install dependencies (use --no-cache-dir to keep image small)
-# Using torch CPU-only version for cheap cloud deployment
+WORKDIR /home/user/app
+
+COPY --chown=user requirements.txt .
+
+# Install dependencies
 RUN pip install torch==2.2.0 --index-url https://download.pytorch.org/whl/cpu
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy all source code
-COPY . .
+COPY --chown=user . .
 
 # Ensure the app can write to models and database
-RUN mkdir -p /app/models
+RUN mkdir -p /home/user/app/models
 
 EXPOSE 7860
 

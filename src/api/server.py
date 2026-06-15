@@ -8,6 +8,9 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import List, Dict, Any
+import asyncio
+import schedule
+from contextlib import asynccontextmanager
 
 # Add project root to sys.path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
@@ -16,7 +19,23 @@ from src.features.engineering import engineer_features_df
 from src.data.news_scraper import fetch_recent_news
 from src.models.sentiment_agent import get_sentiment_analyst
 
-app = FastAPI(title="Latent Regime Discovery API")
+async def run_scheduler():
+    """Background task to run the scheduler."""
+    from src.bot.scheduler import setup_scheduler
+    setup_scheduler()
+    while True:
+        schedule.run_pending()
+        await asyncio.sleep(60)
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Startup
+    load_models_on_startup()
+    asyncio.create_task(run_scheduler())
+    yield
+    # Shutdown logic could go here
+
+app = FastAPI(title="Latent Regime Discovery API", lifespan=lifespan)
 
 # Enable CORS for the React frontend
 app.add_middleware(
@@ -30,7 +49,6 @@ app.add_middleware(
 # Global model variables
 models = {}
 
-@app.on_event("startup")
 def load_models_on_startup():
     """Loads pre-trained models on startup for all supported tickers."""
     models_dir_base = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', 'models'))
@@ -48,7 +66,7 @@ def load_models_on_startup():
             print(f"Models loaded successfully for {ticker}.")
         except Exception as e:
             print(f"Warning: Failed to load models for {ticker}. {e}")
-            
+
     print("Loading FinBERT sentiment model...")
     try:
         get_sentiment_analyst()

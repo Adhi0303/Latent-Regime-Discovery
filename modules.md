@@ -134,6 +134,12 @@ This document outlines the step-by-step implementation plan for the Latent Regim
   Expand the model to ingest Bitcoin, Gold, and Tech Stocks to create a "Global Regime Heatmap". Set up automated Discord/Email webhooks to send critical alerts the moment a Regime Shift is detected.
 
 
-- implement the rag system to predict the tomorrow price and the next data compare the predicted price with the real price to show how good the model was and train the model once in a while ( not everyday to make it complicated and not very late to miss out the changes in the market )
+Here are 4 highly impactful, technical bullet points tailored for a Software Engineering or Machine Learning resume. They focus on action verbs, specific technologies, and the mathematical complexity of what you built:
 
-- and also lets give a in game cash in this project and keep the server fully running and lets the ai do the trading all by it self using the live market data and using for quant trading model and i should not have the ability to change the in game money and we can track how the ai buys and sells the price and how it makes the money either profit are loss and how the ai model is accurate based on the prediction 
+Architected an Autonomous Quantitative Trading Engine: Designed a multi-modal AI pipeline combining an unsupervised Hidden Markov Model (HMM) with Principal Component Analysis (PCA) for latent macroeconomic regime clustering, and a PyTorch LSTM neural network for time-series price prediction.
+
+Built a "Self-Healing" MLOps Pipeline: Engineered a containerized Python/FastAPI backend with an autonomous background heartbeat monitor that tracks rolling Mean Absolute Error (MAE), dynamically triggering PyTorch backpropagation retraining if model accuracy drifts.
+
+Integrated Real-Time LLM Sentiment Analysis: Deployed FinBERT, a transformer-based Large Language Model, to continuously scrape and parse live financial news headlines, converting unstructured text into actionable mathematical risk scores.
+
+Developed a Live Next.js Portfolio Dashboard: Created a responsive React frontend to visualize 20-year backtest simulations, live AI probabilities, and an autonomous multi-asset paper trading ledger, demonstrating significant Alpha generation and reduced maximum drawdown.

@@ -18,7 +18,7 @@ COPY . .
 # Ensure the app can write to models and database
 RUN mkdir -p /app/models
 
-EXPOSE 8000
+EXPOSE 7860
 
 # Start FastAPI using uvicorn
-CMD ["uvicorn", "src.api.server:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["uvicorn", "src.api.server:app", "--host", "0.0.0.0", "--port", "7860"]

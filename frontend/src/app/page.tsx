@@ -33,7 +33,7 @@ export default function Dashboard() {
 
   useEffect(() => {
     setLoading(true);
-    fetch(`http://localhost:8000/api/predict?ticker=${selectedTicker}&period=5y`)
+    fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/predict?ticker=${selectedTicker}&period=5y`)
       .then((res) => res.json())
       .then((json) => {
         setData(json);
@@ -46,7 +46,7 @@ export default function Dashboard() {
       
     // Fetch sentiment concurrently
     setSentimentLoading(true);
-    fetch(`http://localhost:8000/api/sentiment?ticker=${selectedTicker}`)
+    fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/sentiment?ticker=${selectedTicker}`)
       .then((res) => res.json())
       .then((json) => {
         setSentimentData(json);
@@ -55,7 +55,7 @@ export default function Dashboard() {
       
     // Fetch forecast
     setForecastLoading(true);
-    fetch(`http://localhost:8000/api/forecast?ticker=${selectedTicker}`)
+    fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/forecast?ticker=${selectedTicker}`)
       .then((res) => res.json())
       .then((json) => {
         setForecastData(json);
@@ -64,7 +64,7 @@ export default function Dashboard() {
       
     // Fetch backtest
     setBacktestLoading(true);
-    fetch(`http://localhost:8000/api/backtest?ticker=${selectedTicker}`)
+    fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/backtest?ticker=${selectedTicker}`)
       .then((res) => res.json())
       .then((json) => {
         setBacktestData(json);
@@ -73,7 +73,7 @@ export default function Dashboard() {
 
     // Fetch Global Portfolio
     setPortfolioLoading(true);
-    fetch(`http://localhost:8000/api/bot/portfolio`)
+    fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/bot/portfolio`)
       .then((res) => res.json())
       .then((json) => {
         setPortfolioData(json);
@@ -82,7 +82,7 @@ export default function Dashboard() {
 
     // Fetch Predictions Scoreboard
     setPredictionsLoading(true);
-    fetch(`http://localhost:8000/api/bot/predictions?ticker=${selectedTicker}`)
+    fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/bot/predictions?ticker=${selectedTicker}`)
       .then((res) => res.json())
       .then((json) => {
         setPredictionsData(json);
@@ -93,7 +93,7 @@ export default function Dashboard() {
 
   const forceBotRun = () => {
     setRunningBot(true);
-    fetch(`http://localhost:8000/api/bot/run`, { method: 'POST' })
+    fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/bot/run`, { method: 'POST' })
       .then((res) => res.json())
       .then(() => {
          setTriggerRun(!triggerRun);

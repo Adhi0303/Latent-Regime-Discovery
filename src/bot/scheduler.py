@@ -21,15 +21,12 @@ def trigger_retrainer_heartbeat():
     except Exception as e:
         print(f"Failed to trigger heartbeat: {e}")
 
-# In production, markets close at 4:00 PM EST (21:00 UTC).
-# We run the cycle at 4:15 PM EST (21:15 UTC).
-schedule.every().day.at("21:15").do(trigger_daily_cycle)
+def setup_scheduler():
+    # In production, markets close at 4:00 PM EST (21:00 UTC).
+    # We run the cycle at 4:15 PM EST (21:15 UTC).
+    schedule.every().day.at("21:15").do(trigger_daily_cycle)
 
-# We run the Heartbeat monitor at 5:00 PM EST (22:00 UTC)
-schedule.every().day.at("22:00").do(trigger_retrainer_heartbeat)
+    # We run the Heartbeat monitor at 5:00 PM EST (22:00 UTC)
+    schedule.every().day.at("22:00").do(trigger_retrainer_heartbeat)
 
-print("Autonomous Scheduler Started. Waiting for scheduled tasks...")
-
-while True:
-    schedule.run_pending()
-    time.sleep(60) # Wake up every minute to check schedule
+    print("Autonomous Scheduler Setup Complete. Attached to FastAPI Event Loop.")

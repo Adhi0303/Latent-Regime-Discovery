@@ -13,10 +13,19 @@ import schedule
 import requests
 from contextlib import asynccontextmanager
 
-yf_session = requests.Session()
-yf_session.headers.update({
-    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36'
-})
+# Use curl_cffi to impersonate Chrome's TLS fingerprint.
+# Yahoo Finance blocks requests from datacenter IPs based on TLS fingerprinting,
+# not just the User-Agent header. curl_cffi bypasses this at the network level.
+try:
+    from curl_cffi import requests as curl_requests
+    yf_session = curl_requests.Session(impersonate="chrome110")
+    print("Using curl_cffi Chrome-impersonating session for yfinance.")
+except ImportError:
+    yf_session = requests.Session()
+    yf_session.headers.update({
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36'
+    })
+    print("curl_cffi not available, using standard requests session.")
 
 # Add project root to sys.path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))

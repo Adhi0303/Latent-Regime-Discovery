@@ -471,72 +471,71 @@ export default function Dashboard() {
             </div>
 ) : viewMode === "backtest" ? (
         /* Backtest Simulator View */
-        <div className="flex-1 overflow-y-auto pr-2">
-        <div className="space-y-6">
+        <div className="flex flex-col h-full gap-4 min-h-0">
           {backtestLoading ? (
-             <div className="flex flex-col items-center justify-center py-20 text-gray-400">
-               <Activity className="h-10 w-10 animate-spin text-purple-500 mb-4" />
-               <p>Simulating 20 years of historical trading...</p>
+             <div className="flex flex-col items-center justify-center flex-1 text-gray-400">
+               <Activity className="h-8 w-8 animate-spin text-purple-500 mb-3" />
+               <p className="text-sm">Simulating 20 years of historical trading...</p>
              </div>
           ) : backtestData && backtestData.metrics ? (
             <>
               {/* KPIs */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div className="rounded-2xl bg-[#141414] border border-[#27272A] p-6 shadow-xl relative overflow-hidden">
-                  <div className="absolute top-0 right-0 w-32 h-32 bg-purple-500/10 rounded-full blur-3xl -mr-10 -mt-10"></div>
-                  <p className="text-sm font-medium text-gray-400 mb-1">AI Strategy Total Return</p>
-                  <h2 className="text-4xl font-bold tracking-tight text-white mt-2">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 shrink-0">
+                <div className="rounded-xl bg-[#141414] border border-[#27272A] p-4 shadow-sm relative overflow-hidden flex flex-col justify-center">
+                  <div className="absolute top-0 right-0 w-24 h-24 bg-purple-500/10 rounded-full blur-2xl -mr-8 -mt-8"></div>
+                  <p className="text-xs font-medium text-gray-400 mb-1">AI Strategy Total Return</p>
+                  <h2 className="text-2xl font-bold tracking-tight text-white mt-1">
                     {backtestData.metrics.ai_return > 0 ? '+' : ''}{backtestData.metrics.ai_return.toLocaleString()}%
                   </h2>
-                  <p className="text-sm text-gray-500 mt-2">Max Drawdown: <span className="text-rose-400">{backtestData.metrics.ai_max_dd}%</span></p>
+                  <p className="text-[10px] text-gray-500 mt-1">Max Drawdown: <span className="text-rose-400">{backtestData.metrics.ai_max_dd}%</span></p>
                 </div>
                 
-                <div className="rounded-2xl bg-[#141414] border border-[#27272A] p-6 shadow-xl relative overflow-hidden">
-                  <p className="text-sm font-medium text-gray-400 mb-1">Buy & Hold Return</p>
-                  <h2 className="text-4xl font-bold tracking-tight text-gray-300 mt-2">
+                <div className="rounded-xl bg-[#141414] border border-[#27272A] p-4 shadow-sm relative overflow-hidden flex flex-col justify-center">
+                  <p className="text-xs font-medium text-gray-400 mb-1">Buy & Hold Return</p>
+                  <h2 className="text-2xl font-bold tracking-tight text-gray-300 mt-1">
                     {backtestData.metrics.buy_hold_return > 0 ? '+' : ''}{backtestData.metrics.buy_hold_return.toLocaleString()}%
                   </h2>
-                  <p className="text-sm text-gray-500 mt-2">Max Drawdown: <span className="text-rose-400">{backtestData.metrics.buy_hold_max_dd}%</span></p>
+                  <p className="text-[10px] text-gray-500 mt-1">Max Drawdown: <span className="text-rose-400">{backtestData.metrics.buy_hold_max_dd}%</span></p>
                 </div>
 
-                <div className="rounded-2xl bg-[#141414] border border-[#27272A] p-6 shadow-xl relative overflow-hidden">
-                  <div className={`absolute top-0 right-0 w-32 h-32 rounded-full blur-3xl -mr-10 -mt-10 ${backtestData.metrics.alpha > 0 ? 'bg-emerald-500/10' : 'bg-rose-500/10'}`}></div>
-                  <p className="text-sm font-medium text-gray-400 mb-1">AI Alpha (Outperformance)</p>
-                  <h2 className={`text-4xl font-bold tracking-tight mt-2 ${backtestData.metrics.alpha > 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                <div className="rounded-xl bg-[#141414] border border-[#27272A] p-4 shadow-sm relative overflow-hidden flex flex-col justify-center">
+                  <div className={`absolute top-0 right-0 w-24 h-24 rounded-full blur-2xl -mr-8 -mt-8 ${backtestData.metrics.alpha > 0 ? 'bg-emerald-500/10' : 'bg-rose-500/10'}`}></div>
+                  <p className="text-xs font-medium text-gray-400 mb-1">AI Alpha (Outperformance)</p>
+                  <h2 className={`text-2xl font-bold tracking-tight mt-1 ${backtestData.metrics.alpha > 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
                     {backtestData.metrics.alpha > 0 ? '+' : ''}{backtestData.metrics.alpha.toLocaleString()}%
                   </h2>
-                  <p className="text-sm text-gray-500 mt-2">Difference in total returns</p>
+                  <p className="text-[10px] text-gray-500 mt-1">Difference in total returns</p>
                 </div>
               </div>
 
               {/* Chart Section */}
-              <div className="rounded-2xl bg-[#141414] border border-[#27272A] p-6 shadow-xl">
-                <div className="mb-6">
-                  <h3 className="text-lg font-bold text-white">Historical Portfolio Value ($)</h3>
-                  <p className="text-sm text-gray-500">Starting with $10,000. AI Strategy (Purple) vs Buy & Hold (White).</p>
+              <div className="flex-1 flex flex-col rounded-xl bg-[#141414] border border-[#27272A] p-4 shadow-sm min-h-0">
+                <div className="mb-3 shrink-0">
+                  <h3 className="text-sm font-bold text-white">Historical Portfolio Value ($)</h3>
+                  <p className="text-xs text-gray-500">Starting with $10,000. AI Strategy (Purple) vs Buy & Hold (White).</p>
                 </div>
                 
-                <div className="h-[500px] w-full">
+                <div className="flex-1 w-full min-h-0">
                   <ResponsiveContainer width="100%" height="100%">
-                    <LineChart data={backtestData.history} margin={{ top: 10, right: 10, left: 20, bottom: 0 }}>
+                    <LineChart data={backtestData.history} margin={{ top: 5, right: 5, left: 5, bottom: 0 }}>
                       <CartesianGrid strokeDasharray="3 3" stroke="#27272A" vertical={false} />
                       <XAxis 
                         dataKey="date" 
                         stroke="#71717A" 
-                        tick={{fill: '#71717A', fontSize: 12}}
-                        tickMargin={10}
-                        minTickGap={50}
+                        tick={{fill: '#71717A', fontSize: 10}}
+                        tickMargin={8}
+                        minTickGap={30}
                       />
                       <YAxis 
                         domain={['auto', 'auto']} 
                         stroke="#71717A" 
-                        tick={{fill: '#71717A', fontSize: 12}}
+                        tick={{fill: '#71717A', fontSize: 10}}
                         tickFormatter={(val) => `$${(val / 1000).toFixed(0)}k`}
                         axisLine={false}
                         tickLine={false}
                       />
                       <Tooltip 
-                        contentStyle={{ backgroundColor: '#27272A', borderColor: '#3F3F46', borderRadius: '8px', color: '#fff' }}
+                        contentStyle={{ backgroundColor: '#27272A', borderColor: '#3F3F46', borderRadius: '8px', color: '#fff', fontSize: '12px' }}
                         itemStyle={{ color: '#fff' }}
                         labelStyle={{ color: '#A1A1AA', marginBottom: '4px' }}
                         formatter={(value: any, name: any) => {
@@ -569,9 +568,8 @@ export default function Dashboard() {
               </div>
             </>
           ) : (
-             <div className="text-red-400">Failed to run backtest simulation.</div>
+             <div className="flex-1 flex items-center justify-center text-red-400 text-sm">Failed to run backtest simulation.</div>
           )}
-        </div>
         </div>
       ) : viewMode === "bot" ? (
         /* Multi-Asset Portfolio Bot View */
@@ -695,49 +693,48 @@ export default function Dashboard() {
 
       ) : (
         /* Scoreboard View */
-        <div className="flex-1 overflow-y-auto pr-2">
-        <div className="space-y-6">
-           <div className="flex justify-between items-end mb-6">
+        <div className="flex flex-col h-full gap-4 min-h-0">
+           <div className="flex justify-between items-end shrink-0">
              <div>
-               <h2 className="text-2xl font-bold text-white flex items-center gap-2">AI Prediction Scoreboard</h2>
-               <p className="text-gray-400 mt-1">Plotting yesterday's prediction against today's actual price to grade the AI.</p>
+               <h2 className="text-xl font-bold text-white flex items-center gap-2">AI Prediction Scoreboard</h2>
+               <p className="text-xs text-gray-400 mt-1">Plotting yesterday's prediction against today's actual price to grade the AI.</p>
              </div>
              {predictionsData && predictionsData.mae > 0 && (
-                <div className="bg-rose-500/10 border border-rose-500/30 px-4 py-2 rounded-lg text-right">
-                  <p className="text-xs text-rose-400 font-medium">Mean Absolute Error (MAE)</p>
-                  <p className="text-2xl font-bold text-rose-500">{predictionsData.mae.toFixed(2)}%</p>
+                <div className="bg-rose-500/10 border border-rose-500/30 px-3 py-1.5 rounded-lg text-right">
+                  <p className="text-[10px] text-rose-400 font-medium">Mean Absolute Error</p>
+                  <p className="text-lg font-bold text-rose-500">{predictionsData.mae.toFixed(2)}%</p>
                 </div>
              )}
            </div>
 
            {predictionsLoading ? (
-               <div className="flex flex-col items-center justify-center py-20 text-gray-400">
-                 <Activity className="h-10 w-10 animate-spin text-rose-500 mb-4" />
-                 <p>Fetching prediction history...</p>
+               <div className="flex flex-col items-center justify-center flex-1 text-gray-400">
+                 <Activity className="h-8 w-8 animate-spin text-rose-500 mb-3" />
+                 <p className="text-sm">Fetching prediction history...</p>
                </div>
            ) : predictionsData && predictionsData.predictions && predictionsData.predictions.length > 0 ? (
-             <div className="rounded-2xl bg-[#141414] border border-[#27272A] p-6 shadow-xl">
-               <div className="h-[500px] w-full">
+             <div className="flex-1 flex flex-col rounded-xl bg-[#141414] border border-[#27272A] p-4 shadow-sm min-h-0">
+               <div className="flex-1 w-full min-h-0">
                   <ResponsiveContainer width="100%" height="100%">
-                    <LineChart data={predictionsData.predictions} margin={{ top: 10, right: 10, left: 20, bottom: 0 }}>
+                    <LineChart data={predictionsData.predictions} margin={{ top: 10, right: 10, left: 5, bottom: 0 }}>
                       <CartesianGrid strokeDasharray="3 3" stroke="#27272A" vertical={false} />
                       <XAxis 
                         dataKey="timestamp" 
                         stroke="#71717A" 
-                        tick={{fill: '#71717A', fontSize: 12}}
-                        tickMargin={10}
+                        tick={{fill: '#71717A', fontSize: 10}}
+                        tickMargin={8}
                         minTickGap={30}
                       />
                       <YAxis 
                         domain={['auto', 'auto']} 
                         stroke="#71717A" 
-                        tick={{fill: '#71717A', fontSize: 12}}
+                        tick={{fill: '#71717A', fontSize: 10}}
                         tickFormatter={(val) => `$${val.toFixed(0)}`}
                         axisLine={false}
                         tickLine={false}
                       />
                       <Tooltip 
-                        contentStyle={{ backgroundColor: '#27272A', borderColor: '#3F3F46', borderRadius: '8px', color: '#fff' }}
+                        contentStyle={{ backgroundColor: '#27272A', borderColor: '#3F3F46', borderRadius: '8px', color: '#fff', fontSize: '12px' }}
                         itemStyle={{ color: '#fff' }}
                         labelStyle={{ color: '#A1A1AA', marginBottom: '4px' }}
                         formatter={(value: any, name: any) => {
@@ -770,9 +767,8 @@ export default function Dashboard() {
                 </div>
              </div>
            ) : (
-              <div className="text-gray-400 mt-10 text-center">No predictions logged yet. Run the bot cycle to start logging!</div>
+              <div className="flex-1 flex items-center justify-center text-gray-500 text-sm">No predictions logged yet. Run the bot cycle to start logging!</div>
            )}
-        </div>
         </div>
       )}
         </div>

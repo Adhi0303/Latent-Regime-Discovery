@@ -279,274 +279,199 @@ export default function Dashboard() {
         </header>
 
         {/* Scrollable Content Area */}
-        <div className="flex-1 overflow-y-auto p-8">
+        <div className="flex-1 p-6 flex flex-col overflow-hidden min-h-0 gap-4">
           {viewMode === "dashboard" ? (
-            <>
-              {/* Top Cards Grid */}
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-            
-            {/* Card 1: Asset / Price */}
-            <div className="rounded-2xl bg-[#141414] border border-[#27272A] p-6 shadow-xl relative overflow-hidden group">
-              <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/5 rounded-full blur-3xl -mr-10 -mt-10 transition-all group-hover:bg-blue-500/10"></div>
-              <p className="text-sm font-medium text-gray-400 mb-1">Asset Tracked</p>
-              <h2 className="text-4xl font-bold text-white tracking-tight">{data.ticker}</h2>
-              <div className="mt-4 flex items-baseline gap-2">
-                <span className="text-2xl font-semibold text-gray-200">
-                  ${data.latest_close.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                </span>
-                <span className="text-xs font-medium text-gray-500">Close Price</span>
-              </div>
-            </div>
-
-            {/* Card 1.5: LSTM Forecast */}
-            <div className="rounded-2xl bg-[#141414] border border-[#27272A] p-6 shadow-xl relative overflow-hidden group">
-              <div className="absolute top-0 right-0 w-32 h-32 bg-purple-500/5 rounded-full blur-3xl -mr-10 -mt-10 transition-all group-hover:bg-purple-500/10"></div>
-              <p className="text-sm font-medium text-gray-400 mb-1">AI Price Forecast (Tomorrow)</p>
-              {forecastLoading ? (
-                <div className="flex items-center gap-2 mt-4 text-gray-400">
-                  <span className="animate-spin h-5 w-5 border-2 border-purple-500 border-t-transparent rounded-full"></span>
-                  <span>Running LSTM...</span>
-                </div>
-              ) : forecastData ? (
-                <>
-                  <h2 className="text-4xl font-bold tracking-tight mt-1" style={{ color: forecastData.predicted_pct_change > 0 ? '#34d399' : '#fb7185' }}>
-                    ${forecastData.final_prediction.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                  </h2>
-                  <div className="mt-4 flex items-baseline gap-2">
-                    <span className={`text-sm font-semibold ${forecastData.predicted_pct_change > 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
-                      {forecastData.predicted_pct_change > 0 ? '+' : ''}{forecastData.predicted_pct_change.toFixed(2)}%
+            <div className="flex flex-col h-full gap-4 min-h-0">
+              {/* Top Cards Grid (Compact) */}
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4 shrink-0">
+                {/* Card 1 */}
+                <div className="rounded-xl bg-[#141414] border border-[#27272A] p-4 shadow-sm flex flex-col justify-center">
+                  <p className="text-xs font-medium text-gray-400 mb-1">Asset Tracked</p>
+                  <div className="flex items-baseline gap-2">
+                    <h2 className="text-xl font-bold text-white tracking-tight">{data.ticker}</h2>
+                    <span className="text-sm font-semibold text-gray-300">
+                      ${data.latest_close.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </span>
-                    <span className="text-xs font-medium text-gray-500">from today</span>
-                  </div>
-                </>
-              ) : (
-                <p className="text-sm text-rose-400 mt-4">Failed to load forecast.</p>
-              )}
-            </div>
-
-            {/* Card 2: Current Regime */}
-            <div className="rounded-2xl bg-[#141414] border border-[#27272A] p-6 shadow-xl relative overflow-hidden">
-              <div className={`absolute top-0 right-0 w-32 h-32 rounded-full blur-3xl -mr-10 -mt-10 ${currentRegime === 0 ? 'bg-emerald-500/10' : currentRegime === 1 ? 'bg-amber-500/10' : 'bg-rose-500/10'}`}></div>
-              <p className="text-sm font-medium text-gray-400 mb-1">AI Detected Regime</p>
-              <h2 className={`text-3xl font-bold tracking-tight ${regimeTextColors[currentRegime]}`}>
-                {regimeLabels[currentRegime]}
-              </h2>
-              <div className="mt-4 flex items-center gap-2">
-                {currentRegime === 0 && <TrendingUp className="w-5 h-5 text-emerald-400" />}
-                {currentRegime === 1 && <AlertTriangle className="w-5 h-5 text-amber-400" />}
-                {currentRegime === 2 && <ShieldAlert className="w-5 h-5 text-rose-400" />}
-                <span className="text-sm text-gray-400">Updated: {data.latest_date}</span>
-              </div>
-            </div>
-
-            {/* Card 3: Probabilities */}
-            <div className="rounded-2xl bg-[#141414] border border-[#27272A] p-6 shadow-xl flex flex-col justify-between">
-              <p className="text-sm font-medium text-gray-400 mb-4">Regime Probabilities</p>
-              <div className="space-y-4">
-                <div>
-                  <div className="flex justify-between text-xs mb-1">
-                    <span className="text-emerald-400 font-medium">Bull</span>
-                    <span className="text-gray-300">{(data.probabilities["0"] * 100).toFixed(1)}%</span>
-                  </div>
-                  <div className="w-full bg-[#27272A] rounded-full h-1.5">
-                    <div className="bg-emerald-500 h-1.5 rounded-full" style={{ width: `${data.probabilities["0"] * 100}%` }}></div>
                   </div>
                 </div>
-                <div>
-                  <div className="flex justify-between text-xs mb-1">
-                    <span className="text-amber-400 font-medium">Sideways</span>
-                    <span className="text-gray-300">{(data.probabilities["1"] * 100).toFixed(1)}%</span>
-                  </div>
-                  <div className="w-full bg-[#27272A] rounded-full h-1.5">
-                    <div className="bg-amber-500 h-1.5 rounded-full" style={{ width: `${data.probabilities["1"] * 100}%` }}></div>
-                  </div>
-                </div>
-                <div>
-                  <div className="flex justify-between text-xs mb-1">
-                    <span className="text-rose-400 font-medium">Bear</span>
-                    <span className="text-gray-300">{(data.probabilities["2"] * 100).toFixed(1)}%</span>
-                  </div>
-                  <div className="w-full bg-[#27272A] rounded-full h-1.5">
-                    <div className="bg-rose-500 h-1.5 rounded-full" style={{ width: `${data.probabilities["2"] * 100}%` }}></div>
-                  </div>
-                </div>
-              </div>
-            </div>
 
-          </div>
-
-          {/* Macro Sentiment Section */}
-          <div className="rounded-2xl bg-[#141414] border border-[#27272A] p-6 shadow-xl mb-10">
-            <div className="flex justify-between items-center mb-6">
-              <div>
-                <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                  <span className="bg-blue-500/20 text-blue-400 p-1.5 rounded-lg"><Activity className="w-4 h-4" /></span>
-                  Macro Analyst Sentiment
-                </h3>
-                <p className="text-sm text-gray-500 mt-1">Live news analysis scored by FinBERT LLM</p>
-              </div>
-              {sentimentLoading ? (
-                <div className="flex items-center gap-2 text-gray-400 text-sm">
-                  <span className="animate-spin h-4 w-4 border-2 border-blue-500 border-t-transparent rounded-full"></span>
-                  Reading headlines...
-                </div>
-              ) : sentimentData ? (
-                <div className="text-right">
-                  <div className="text-3xl font-bold" style={{ color: sentimentData.macro_score > 0 ? '#34d399' : sentimentData.macro_score < 0 ? '#fb7185' : '#fbbf24' }}>
-                    {sentimentData.macro_score > 0 ? '+' : ''}{sentimentData.macro_score.toFixed(2)}
-                  </div>
-                  <div className="text-xs text-gray-500 font-medium">Aggregated Score</div>
-                </div>
-              ) : null}
-            </div>
-
-            {sentimentData && sentimentData.news && (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {sentimentData.news.map((n: any, i: number) => (
-                  <a key={i} href={n.url || "#"} target="_blank" rel="noopener noreferrer" className="block focus:outline-none">
-                    <div className="flex items-start gap-3 p-4 rounded-xl bg-[#0A0A0B] border border-[#27272A] hover:bg-[#1C1C1E] transition-colors h-full cursor-pointer">
-                      <div className={`mt-1 flex-shrink-0 w-2.5 h-2.5 rounded-full ${n.sentiment_label === 'positive' ? 'bg-emerald-500' : n.sentiment_label === 'negative' ? 'bg-rose-500' : 'bg-amber-500'}`}></div>
-                      <div className="flex-1 min-w-0">
-                        <h4 className="text-sm font-medium text-gray-200 line-clamp-2 hover:text-blue-400 transition-colors">{n.title}</h4>
-                        <div className="flex justify-between items-center mt-2">
-                          <p className="text-xs text-gray-500">{n.publisher}</p>
-                          <div className="text-xs font-mono font-medium" style={{ color: n.sentiment_score > 0 ? '#34d399' : n.sentiment_score < 0 ? '#fb7185' : '#fbbf24' }}>
-                            {n.sentiment_score > 0 ? '+' : ''}{n.sentiment_score.toFixed(2)}
-                          </div>
-                        </div>
-                      </div>
+                {/* Card 1.5 */}
+                <div className="rounded-xl bg-[#141414] border border-[#27272A] p-4 shadow-sm flex flex-col justify-center">
+                  <p className="text-xs font-medium text-gray-400 mb-1">AI Price Forecast</p>
+                  {forecastLoading ? (
+                    <div className="text-xs text-gray-400">Loading...</div>
+                  ) : forecastData ? (
+                    <div className="flex items-baseline gap-2">
+                      <h2 className="text-xl font-bold tracking-tight" style={{ color: forecastData.predicted_pct_change > 0 ? '#34d399' : '#fb7185' }}>
+                        ${forecastData.final_prediction.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      </h2>
+                      <span className={`text-xs font-semibold ${forecastData.predicted_pct_change > 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                        {forecastData.predicted_pct_change > 0 ? '+' : ''}{forecastData.predicted_pct_change.toFixed(2)}%
+                      </span>
                     </div>
-                  </a>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* Chart Section */}
-          <div className="rounded-2xl bg-[#141414] border border-[#27272A] p-6 shadow-xl">
-            <div className="mb-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-              <div>
-                <h3 className="text-lg font-bold text-white">Historical Regime Map</h3>
-                <p className="text-sm text-gray-500">{data.ticker} Price overlaid with AI-detected hidden states.</p>
-              </div>
-
-              <div className="flex flex-col gap-3">
-                {/* Timeframe Filters */}
-                <div className="flex items-center gap-2 bg-[#27272A]/50 p-1 rounded-lg border border-[#27272A] self-end">
-                  {['1w', '1m', '6m', '1y', 'all'].map((tf) => (
-                    <button
-                      key={tf}
-                      onClick={() => { setTimeFilter(tf); setZoomDomain({left: null, right: null}); }}
-                      className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${timeFilter === tf ? 'bg-[#3F3F46] text-white' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}
-                    >
-                      {tf.toUpperCase()}
-                    </button>
-                  ))}
-                  {(zoomDomain.left || zoomDomain.right) && (
-                    <button
-                      onClick={() => setZoomDomain({ left: null, right: null })}
-                      className="px-3 py-1 text-xs font-medium rounded-md bg-blue-500/20 text-blue-400 hover:bg-blue-500/30 transition-colors ml-1"
-                    >
-                      Reset Zoom
-                    </button>
+                  ) : (
+                    <div className="text-xs text-rose-400">Failed</div>
                   )}
                 </div>
 
-                {/* Regime Visibility Toggles */}
-                <div className="flex items-center gap-2 self-end">
-                  <span className="text-xs text-gray-500 mr-1">Layers:</span>
-                  {[
-                    { id: 'bull', label: 'Bull', color: 'bg-emerald-500' },
-                    { id: 'sideways', label: 'Sideways', color: 'bg-amber-500' },
-                    { id: 'bear', label: 'Bear', color: 'bg-rose-500' }
-                  ].map((r) => (
-                    <button
-                      key={r.id}
-                      onClick={() => setShowRegimes(prev => ({ ...prev, [r.id]: !prev[r.id as keyof typeof showRegimes] }))}
-                      className={`flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium transition-colors border ${showRegimes[r.id as keyof typeof showRegimes] ? 'bg-[#27272A] border-[#27272A] text-gray-300' : 'bg-transparent border-transparent text-gray-600'}`}
-                    >
-                      <div className={`w-2 h-2 rounded-full ${showRegimes[r.id as keyof typeof showRegimes] ? r.color : 'bg-gray-600'}`}></div>
-                      {r.label}
-                    </button>
-                  ))}
+                {/* Card 2 */}
+                <div className="rounded-xl bg-[#141414] border border-[#27272A] p-4 shadow-sm flex flex-col justify-center">
+                  <p className="text-xs font-medium text-gray-400 mb-1">Detected Regime</p>
+                  <div className="flex items-center gap-2">
+                    <h2 className={`text-xl font-bold tracking-tight ${regimeTextColors[currentRegime]}`}>
+                      {regimeLabels[currentRegime]}
+                    </h2>
+                  </div>
+                </div>
+
+                {/* Card 3 */}
+                <div className="rounded-xl bg-[#141414] border border-[#27272A] p-4 shadow-sm flex flex-col justify-center">
+                  <p className="text-xs font-medium text-gray-400 mb-2">Regime Probabilities</p>
+                  <div className="flex gap-2 h-1.5 w-full bg-[#27272A] rounded-full overflow-hidden">
+                    <div className="bg-emerald-500 h-full" style={{ width: `${data.probabilities["0"] * 100}%` }}></div>
+                    <div className="bg-amber-500 h-full" style={{ width: `${data.probabilities["1"] * 100}%` }}></div>
+                    <div className="bg-rose-500 h-full" style={{ width: `${data.probabilities["2"] * 100}%` }}></div>
+                  </div>
+                  <div className="flex justify-between text-[10px] mt-1 text-gray-500">
+                    <span>Bu: {(data.probabilities["0"] * 100).toFixed(0)}%</span>
+                    <span>Si: {(data.probabilities["1"] * 100).toFixed(0)}%</span>
+                    <span>Be: {(data.probabilities["2"] * 100).toFixed(0)}%</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Side-by-Side Content */}
+              <div className="flex-1 flex gap-4 min-h-0">
+                {/* Chart Section (Left) */}
+                <div className="flex-[2] rounded-xl bg-[#141414] border border-[#27272A] p-4 flex flex-col shadow-sm min-w-0">
+                  <div className="mb-4 flex justify-between items-center shrink-0">
+                    <h3 className="text-sm font-bold text-white">Historical Regime Map</h3>
+                    <div className="flex items-center gap-2 bg-[#27272A]/50 p-1 rounded-md border border-[#27272A]">
+                      {['1w', '1m', '6m', '1y', 'all'].map((tf) => (
+                        <button
+                          key={tf}
+                          onClick={() => { setTimeFilter(tf); setZoomDomain({left: null, right: null}); }}
+                          className={`px-2 py-0.5 text-[10px] font-medium rounded transition-colors ${timeFilter === tf ? 'bg-[#3F3F46] text-white' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}
+                        >
+                          {tf.toUpperCase()}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  
+                  <div className="flex-1 w-full min-h-0 relative select-none">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <LineChart 
+                        data={chartData} 
+                        margin={{ top: 5, right: 5, left: 5, bottom: 0 }}
+                        onMouseDown={(e) => e && setZoomRefArea({ ...zoomRefArea, left: e.activeLabel ? String(e.activeLabel) : null })}
+                        onMouseMove={(e) => e && zoomRefArea.left && setZoomRefArea({ ...zoomRefArea, right: e.activeLabel ? String(e.activeLabel) : null })}
+                        onMouseUp={() => {
+                          if (zoomRefArea.left && zoomRefArea.right && zoomRefArea.left !== zoomRefArea.right) {
+                            setZoomDomain({ left: zoomRefArea.left, right: zoomRefArea.right });
+                          }
+                          setZoomRefArea({ left: null, right: null });
+                        }}
+                      >
+                        <CartesianGrid strokeDasharray="3 3" stroke="#27272A" vertical={false} />
+                        <XAxis 
+                          dataKey="date" 
+                          stroke="#71717A" 
+                          tick={{fill: '#71717A', fontSize: 10}}
+                          tickMargin={8}
+                          minTickGap={30}
+                        />
+                        <YAxis 
+                          domain={['auto', 'auto']} 
+                          stroke="#71717A" 
+                          tick={{fill: '#71717A', fontSize: 10}}
+                          tickFormatter={(val) => `$${val}`}
+                          axisLine={false}
+                          tickLine={false}
+                        />
+                        <Tooltip 
+                          contentStyle={{ backgroundColor: '#27272A', borderColor: '#3F3F46', borderRadius: '8px', color: '#fff', fontSize: '12px', padding: '8px' }}
+                          itemStyle={{ color: '#60A5FA' }}
+                          labelStyle={{ color: '#A1A1AA', marginBottom: '4px' }}
+                          formatter={(value: any) => [`$${Number(value).toFixed(2)}`, 'Price']}
+                        />
+                        
+                        {blocks.map((b, idx) => {
+                          const regimeName = regimeNameMap[b.regime] as keyof typeof showRegimes;
+                          if (!showRegimes[regimeName]) return null;
+                          return (
+                            <ReferenceArea 
+                              key={idx} 
+                              x1={b.start} 
+                              x2={b.end} 
+                              fill={regimeColors[b.regime]} 
+                              fillOpacity={1}
+                              strokeOpacity={0}
+                            />
+                          );
+                        })}
+
+                        {zoomRefArea.left && zoomRefArea.right ? (
+                          <ReferenceArea x1={zoomRefArea.left} x2={zoomRefArea.right} strokeOpacity={0.3} fill="#FFFFFF" fillOpacity={0.1} />
+                        ) : null}
+
+                        <Line 
+                          type="monotone" 
+                          dataKey="close" 
+                          stroke="#FFFFFF" 
+                          strokeWidth={1.5}
+                          dot={false}
+                          activeDot={{ r: 4, fill: "#60A5FA", stroke: "#27272A", strokeWidth: 2 }}
+                          isAnimationActive={false}
+                        />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  </div>
+                </div>
+
+                {/* Sentiment Section (Right) */}
+                <div className="flex-1 rounded-xl bg-[#141414] border border-[#27272A] p-4 flex flex-col shadow-sm min-w-0">
+                  <div className="mb-3 flex justify-between items-center shrink-0">
+                    <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                      Macro Sentiment
+                    </h3>
+                    {sentimentData && (
+                      <div className="text-xs font-bold px-2 py-1 rounded bg-[#27272A]" style={{ color: sentimentData.macro_score > 0 ? '#34d399' : sentimentData.macro_score < 0 ? '#fb7185' : '#fbbf24' }}>
+                        {sentimentData.macro_score > 0 ? '+' : ''}{sentimentData.macro_score.toFixed(2)}
+                      </div>
+                    )}
+                  </div>
+                  
+                  <div className="flex-1 overflow-y-auto pr-1 space-y-2 min-h-0">
+                    {sentimentLoading ? (
+                      <div className="text-xs text-gray-500 py-4 text-center">Reading headlines...</div>
+                    ) : sentimentData && sentimentData.news ? (
+                      sentimentData.news.map((n: any, i: number) => (
+                        <a key={i} href={n.url || "#"} target="_blank" rel="noopener noreferrer" className="block focus:outline-none">
+                          <div className="flex items-start gap-2 p-2.5 rounded-lg bg-[#0A0A0B] border border-[#27272A] hover:bg-[#1C1C1E] transition-colors">
+                            <div className={`mt-1 flex-shrink-0 w-2 h-2 rounded-full ${n.sentiment_label === 'positive' ? 'bg-emerald-500' : n.sentiment_label === 'negative' ? 'bg-rose-500' : 'bg-amber-500'}`}></div>
+                            <div className="flex-1 min-w-0">
+                              <h4 className="text-xs font-medium text-gray-200 line-clamp-2 leading-tight hover:text-blue-400 transition-colors">{n.title}</h4>
+                              <div className="flex justify-between items-center mt-1.5">
+                                <p className="text-[10px] text-gray-500 truncate">{n.publisher}</p>
+                                <div className="text-[10px] font-mono font-medium" style={{ color: n.sentiment_score > 0 ? '#34d399' : n.sentiment_score < 0 ? '#fb7185' : '#fbbf24' }}>
+                                  {n.sentiment_score > 0 ? '+' : ''}{n.sentiment_score.toFixed(2)}
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </a>
+                      ))
+                    ) : (
+                      <div className="text-xs text-gray-500 py-4 text-center">No sentiment data.</div>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>
-            
-            <div className="h-[500px] w-full select-none">
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart 
-                  data={chartData} 
-                  margin={{ top: 10, right: 10, left: 10, bottom: 0 }}
-                  onMouseDown={(e) => e && setZoomRefArea({ ...zoomRefArea, left: e.activeLabel ? String(e.activeLabel) : null })}
-                  onMouseMove={(e) => e && zoomRefArea.left && setZoomRefArea({ ...zoomRefArea, right: e.activeLabel ? String(e.activeLabel) : null })}
-                  onMouseUp={() => {
-                    if (zoomRefArea.left && zoomRefArea.right && zoomRefArea.left !== zoomRefArea.right) {
-                      setZoomDomain({ left: zoomRefArea.left, right: zoomRefArea.right });
-                    }
-                    setZoomRefArea({ left: null, right: null });
-                  }}
-                >
-                  <CartesianGrid strokeDasharray="3 3" stroke="#27272A" vertical={false} />
-                  <XAxis 
-                    dataKey="date" 
-                    stroke="#71717A" 
-                    tick={{fill: '#71717A', fontSize: 12}}
-                    tickMargin={10}
-                    minTickGap={50}
-                  />
-                  <YAxis 
-                    domain={['auto', 'auto']} 
-                    stroke="#71717A" 
-                    tick={{fill: '#71717A', fontSize: 12}}
-                    tickFormatter={(val) => `$${val}`}
-                    axisLine={false}
-                    tickLine={false}
-                  />
-                  <Tooltip 
-                    contentStyle={{ backgroundColor: '#27272A', borderColor: '#3F3F46', borderRadius: '8px', color: '#fff' }}
-                    itemStyle={{ color: '#60A5FA' }}
-                    labelStyle={{ color: '#A1A1AA', marginBottom: '4px' }}
-                    formatter={(value: any) => [`$${Number(value).toFixed(2)}`, 'Price']}
-                  />
-                  
-                  {/* Draw Regime Backgrounds if toggled ON */}
-                  {blocks.map((b, idx) => {
-                    const regimeName = regimeNameMap[b.regime] as keyof typeof showRegimes;
-                    if (!showRegimes[regimeName]) return null;
-                    return (
-                      <ReferenceArea 
-                        key={idx} 
-                        x1={b.start} 
-                        x2={b.end} 
-                        fill={regimeColors[b.regime]} 
-                        fillOpacity={1}
-                        strokeOpacity={0}
-                      />
-                    );
-                  })}
-
-                  {/* Zoom Drag Area */}
-                  {zoomRefArea.left && zoomRefArea.right ? (
-                    <ReferenceArea x1={zoomRefArea.left} x2={zoomRefArea.right} strokeOpacity={0.3} fill="#FFFFFF" fillOpacity={0.1} />
-                  ) : null}
-
-                  <Line 
-                    type="monotone" 
-                    dataKey="close" 
-                    stroke="#FFFFFF" 
-                    strokeWidth={1.5}
-                    dot={false}
-                    activeDot={{ r: 6, fill: "#60A5FA", stroke: "#27272A", strokeWidth: 2 }}
-                    isAnimationActive={false}
-                  />
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
-        </>
-      ) : viewMode === "backtest" ? (
+) : viewMode === "backtest" ? (
         /* Backtest Simulator View */
+        <div className="flex-1 overflow-y-auto pr-2">
         <div className="space-y-6">
           {backtestLoading ? (
              <div className="flex flex-col items-center justify-center py-20 text-gray-400">
@@ -763,8 +688,10 @@ export default function Dashboard() {
              <div className="text-gray-400 mt-10 text-center">Failed to load portfolio.</div>
            )}
         </div>
+      </div>
       ) : (
         /* Scoreboard View */
+        <div className="flex-1 overflow-y-auto pr-2">
         <div className="space-y-6">
            <div className="flex justify-between items-end mb-6">
              <div>
@@ -841,6 +768,7 @@ export default function Dashboard() {
            ) : (
               <div className="text-gray-400 mt-10 text-center">No predictions logged yet. Run the bot cycle to start logging!</div>
            )}
+        </div>
         </div>
       )}
         </div>

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { 
-  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceArea 
+  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceArea, Brush 
 } from "recharts";
 import { Activity, TrendingUp, AlertTriangle, ShieldAlert, Cpu, History, Wallet, Briefcase } from "lucide-react";
 
@@ -22,6 +22,11 @@ export default function Dashboard() {
 
   const [portfolioData, setPortfolioData] = useState<any>(null);
   const [portfolioLoading, setPortfolioLoading] = useState(true);
+
+  // Chart filters
+  const [showBull, setShowBull] = useState(true);
+  const [showBear, setShowBear] = useState(true);
+  const [showSideways, setShowSideways] = useState(true);
 
   const [predictionsData, setPredictionsData] = useState<any>(null);
   const [predictionsLoading, setPredictionsLoading] = useState(true);
@@ -374,9 +379,28 @@ export default function Dashboard() {
 
           {/* Chart Section */}
           <div className="rounded-2xl bg-[#18181B] border border-white/5 p-6 shadow-xl">
-            <div className="mb-6">
-              <h3 className="text-lg font-bold text-white">Historical Regime Map</h3>
-              <p className="text-sm text-gray-500">{data.ticker} Price overlaid with AI-detected hidden states.</p>
+            <div className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div>
+                <h3 className="text-lg font-bold text-white">Historical Regime Map</h3>
+                <p className="text-sm text-gray-500">{data.ticker} Price overlaid with AI-detected hidden states. Zoom by selecting an area on the mini-chart below.</p>
+              </div>
+              
+              {/* Regime Filter Toggles */}
+              <div className="flex items-center gap-3 bg-[#27272A]/50 p-2 rounded-lg border border-white/5">
+                <span className="text-xs text-gray-400 mr-2 uppercase tracking-wider font-semibold">Overlays:</span>
+                <label className="flex items-center gap-2 cursor-pointer text-sm">
+                  <input type="checkbox" checked={showBull} onChange={(e) => setShowBull(e.target.checked)} className="rounded bg-gray-800 border-gray-700 text-emerald-500 focus:ring-emerald-500" />
+                  <span className="text-emerald-500 font-medium">Bull</span>
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer text-sm">
+                  <input type="checkbox" checked={showBear} onChange={(e) => setShowBear(e.target.checked)} className="rounded bg-gray-800 border-gray-700 text-rose-500 focus:ring-rose-500" />
+                  <span className="text-rose-500 font-medium">Bear</span>
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer text-sm">
+                  <input type="checkbox" checked={showSideways} onChange={(e) => setShowSideways(e.target.checked)} className="rounded bg-gray-800 border-gray-700 text-amber-500 focus:ring-amber-500" />
+                  <span className="text-amber-500 font-medium">Sideways</span>
+                </label>
+              </div>
             </div>
             
             <div className="h-[500px] w-full">
@@ -406,7 +430,12 @@ export default function Dashboard() {
                   />
                   
                   {/* Draw Regime Backgrounds */}
-                  {blocks.map((b, idx) => (
+                  {blocks.filter(b => {
+                    if (b.regime === 'Bull' && !showBull) return false;
+                    if (b.regime === 'Bear' && !showBear) return false;
+                    if (b.regime === 'Sideways' && !showSideways) return false;
+                    return true;
+                  }).map((b, idx) => (
                     <ReferenceArea 
                       key={idx} 
                       x1={b.start} 
@@ -424,6 +453,15 @@ export default function Dashboard() {
                     strokeWidth={1.5}
                     dot={false}
                     activeDot={{ r: 6, fill: "#60A5FA", stroke: "#27272A", strokeWidth: 2 }}
+                  />
+                  
+                  {/* Zoom Brush */}
+                  <Brush 
+                    dataKey="date" 
+                    height={30} 
+                    stroke="#3F3F46" 
+                    fill="#18181B" 
+                    tickFormatter={() => ''} 
                   />
                 </LineChart>
               </ResponsiveContainer>

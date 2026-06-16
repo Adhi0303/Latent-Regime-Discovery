@@ -32,8 +32,9 @@ export default function Dashboard() {
   const [runningBot, setRunningBot] = useState(false);
 
   useEffect(() => {
+    const encodedTicker = encodeURIComponent(selectedTicker);
     setLoading(true);
-    fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/predict?ticker=${selectedTicker}&period=5y`)
+    fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/predict?ticker=${encodedTicker}&period=5y`)
       .then((res) => res.json())
       .then((json) => {
         setData(json);
@@ -46,30 +47,33 @@ export default function Dashboard() {
       
     // Fetch sentiment concurrently
     setSentimentLoading(true);
-    fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/sentiment?ticker=${selectedTicker}`)
+    fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/sentiment?ticker=${encodedTicker}`)
       .then((res) => res.json())
       .then((json) => {
         setSentimentData(json);
         setSentimentLoading(false);
-      });
+      })
+      .catch(() => setSentimentLoading(false));
       
     // Fetch forecast
     setForecastLoading(true);
-    fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/forecast?ticker=${selectedTicker}`)
+    fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/forecast?ticker=${encodedTicker}`)
       .then((res) => res.json())
       .then((json) => {
         setForecastData(json);
         setForecastLoading(false);
-      });
+      })
+      .catch(() => setForecastLoading(false));
       
     // Fetch backtest
     setBacktestLoading(true);
-    fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/backtest?ticker=${selectedTicker}`)
+    fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/backtest?ticker=${encodedTicker}`)
       .then((res) => res.json())
       .then((json) => {
         setBacktestData(json);
         setBacktestLoading(false);
-      });
+      })
+      .catch(() => setBacktestLoading(false));
 
     // Fetch Global Portfolio
     setPortfolioLoading(true);
@@ -78,16 +82,18 @@ export default function Dashboard() {
       .then((json) => {
         setPortfolioData(json);
         setPortfolioLoading(false);
-      });
+      })
+      .catch(() => setPortfolioLoading(false));
 
     // Fetch Predictions Scoreboard
     setPredictionsLoading(true);
-    fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/bot/predictions?ticker=${selectedTicker}`)
+    fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/bot/predictions?ticker=${encodedTicker}`)
       .then((res) => res.json())
       .then((json) => {
         setPredictionsData(json);
         setPredictionsLoading(false);
-      });
+      })
+      .catch(() => setPredictionsLoading(false));
 
   }, [selectedTicker, triggerRun]);
 
@@ -113,7 +119,16 @@ export default function Dashboard() {
     );
   }
 
-  if (!data) return <div className="text-white">Error loading data.</div>;
+  if (!data || data.detail) return (
+    <div className="flex h-screen items-center justify-center bg-[#0E0E10] text-white flex-col gap-4">
+      <ShieldAlert className="h-12 w-12 text-rose-500" />
+      <p className="text-xl font-bold text-rose-400">Backend API Unavailable</p>
+      <p className="text-sm text-gray-400 max-w-sm text-center">
+        The Hugging Face backend is still loading or unavailable. Please wait 1-2 minutes and refresh the page.
+      </p>
+      <p className="text-xs text-gray-600">Error: {data?.detail || "Could not connect to API"}</p>
+    </div>
+  );
 
   const regimeLabels: Record<number, string> = {
     0: "Bull Market",

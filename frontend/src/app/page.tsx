@@ -575,122 +575,124 @@ export default function Dashboard() {
         </div>
       ) : viewMode === "bot" ? (
         /* Multi-Asset Portfolio Bot View */
-        <div className="flex-1 overflow-y-auto pr-2">
-        <div className="space-y-6">
-           <div className="flex justify-between items-end mb-6">
+        <div className="flex flex-col h-full gap-4 min-h-0">
+           <div className="flex justify-between items-end shrink-0">
              <div>
-               <h2 className="text-2xl font-bold text-white flex items-center gap-2"><Briefcase className="text-emerald-500"/> Multi-Asset Portfolio Manager</h2>
-               <p className="text-gray-400 mt-1">Live simulation tracking NVDA, TSLA, and S&P 500 in a shared $10,000 cash pool.</p>
+               <h2 className="text-xl font-bold text-white flex items-center gap-2"><Briefcase className="text-emerald-500 w-5 h-5"/> Multi-Asset Portfolio Manager</h2>
+               <p className="text-xs text-gray-400 mt-1">Live simulation tracking NVDA, TSLA, and S&P 500 in a shared $10,000 cash pool.</p>
              </div>
-             <button onClick={forceBotRun} disabled={runningBot} className="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-lg font-medium shadow-lg transition-colors flex items-center gap-2 disabled:opacity-50">
-               {runningBot ? <Activity className="w-4 h-4 animate-spin" /> : <Cpu className="w-4 h-4" />} 
+             <button onClick={forceBotRun} disabled={runningBot} className="bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1.5 text-sm rounded-lg font-medium shadow-lg transition-colors flex items-center gap-2 disabled:opacity-50">
+               {runningBot ? <Activity className="w-3 h-3 animate-spin" /> : <Cpu className="w-3 h-3" />} 
                {runningBot ? 'Running Logic...' : 'Trigger Multi-Asset Cycle'}
              </button>
            </div>
            
            {portfolioLoading ? (
-               <div className="flex flex-col items-center justify-center py-20 text-gray-400">
-                 <Activity className="h-10 w-10 animate-spin text-emerald-500 mb-4" />
-                 <p>Fetching unified portfolio state...</p>
+               <div className="flex flex-col items-center justify-center flex-1 text-gray-400">
+                 <Activity className="h-8 w-8 animate-spin text-emerald-500 mb-3" />
+                 <p className="text-sm">Fetching unified portfolio state...</p>
                </div>
            ) : portfolioData ? (
              <>
-               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-                 <div className="bg-[#141414] border border-emerald-500/20 p-6 rounded-2xl shadow-xl flex items-center gap-4">
-                   <div className="bg-emerald-500/10 p-4 rounded-full"><Briefcase className="text-emerald-400 w-8 h-8" /></div>
+               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 shrink-0">
+                 <div className="bg-[#141414] border border-emerald-500/20 p-4 rounded-xl shadow-sm flex items-center gap-4">
+                   <div className="bg-emerald-500/10 p-3 rounded-full"><Briefcase className="text-emerald-400 w-5 h-5" /></div>
                    <div>
-                     <p className="text-emerald-500 text-sm font-medium mb-1">Global Portfolio Value</p>
-                     <h3 className="text-4xl font-bold text-white">
-                        {/* We don't have total live value returned directly from the API endpoint easily without hitting yfinance again. 
-                            The last ledger entry has portfolio_value_after. If no ledger, it's just cash. */}
+                     <p className="text-emerald-500 text-xs font-medium mb-0.5">Global Portfolio Value</p>
+                     <h3 className="text-2xl font-bold text-white">
                         ${portfolioData.ledger.length > 0 ? portfolioData.ledger[0].portfolio_value_after.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits:2}) : portfolioData.cash_balance.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits:2})}
                      </h3>
                    </div>
                  </div>
-                 <div className="bg-[#141414] border border-[#27272A] p-6 rounded-2xl shadow-xl flex items-center gap-4">
-                   <div className="bg-blue-500/10 p-4 rounded-full"><Wallet className="text-blue-400 w-8 h-8" /></div>
+                 <div className="bg-[#141414] border border-[#27272A] p-4 rounded-xl shadow-sm flex items-center gap-4">
+                   <div className="bg-blue-500/10 p-3 rounded-full"><Wallet className="text-blue-400 w-5 h-5" /></div>
                    <div>
-                     <p className="text-gray-400 text-sm font-medium mb-1">Available Cash (Dry Powder)</p>
-                     <h3 className="text-3xl font-bold text-gray-200">${portfolioData.cash_balance.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits:2})}</h3>
+                     <p className="text-gray-400 text-xs font-medium mb-0.5">Available Cash (Dry Powder)</p>
+                     <h3 className="text-2xl font-bold text-gray-200">${portfolioData.cash_balance.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits:2})}</h3>
                    </div>
                  </div>
                </div>
 
-               {/* Current Holdings Table */}
-               <div className="bg-[#141414] border border-[#27272A] rounded-2xl shadow-xl overflow-hidden mb-8">
-                 <div className="px-6 py-4 border-b border-[#27272A] bg-[#0A0A0B] flex items-center gap-2">
-                   <Activity className="w-4 h-4 text-emerald-400" />
-                   <h3 className="font-bold text-white">Live Asset Holdings</h3>
-                 </div>
-                 {portfolioData.holdings.length > 0 ? (
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-6">
-                      {portfolioData.holdings.map((h: any, idx: number) => (
-                        <div key={idx} className="bg-[#0A0A0B] border border-[#27272A] p-4 rounded-xl flex flex-col">
-                          <p className="text-sm font-bold text-gray-400">{h.ticker}</p>
-                          <p className="text-2xl font-bold text-emerald-400 mt-1">
-                            ${(h.value || 0).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}
-                          </p>
-                          <div className="mt-3 pt-3 border-t border-[#27272A] flex justify-between items-center text-xs">
-                            <span className="text-gray-500">Amount:</span>
-                            <span className="text-gray-300 font-medium">{h.amount.toFixed(4)} shares</span>
-                          </div>
-                          <div className="mt-1 flex justify-between items-center text-xs">
-                            <span className="text-gray-500">Bought at:</span>
-                            <span className="text-gray-300 font-medium">${(h.latest_price || 0).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
-                          </div>
+               {/* Side-by-Side Area */}
+               <div className="flex-1 flex gap-4 min-h-0">
+                 {/* Current Holdings Table (Left) */}
+                 <div className="flex-[1] flex flex-col min-w-0 bg-[#141414] border border-[#27272A] rounded-xl shadow-sm overflow-hidden">
+                   <div className="px-4 py-3 border-b border-[#27272A] bg-[#0A0A0B] flex items-center gap-2 shrink-0">
+                     <Activity className="w-4 h-4 text-emerald-400" />
+                     <h3 className="text-sm font-bold text-white">Live Asset Holdings</h3>
+                   </div>
+                   <div className="flex-1 overflow-y-auto p-4 min-h-0">
+                     {portfolioData.holdings.length > 0 ? (
+                        <div className="grid grid-cols-1 xl:grid-cols-2 gap-3">
+                          {portfolioData.holdings.map((h: any, idx: number) => (
+                            <div key={idx} className="bg-[#0A0A0B] border border-[#27272A] p-3 rounded-lg flex flex-col">
+                              <p className="text-xs font-bold text-gray-400">{h.ticker}</p>
+                              <p className="text-lg font-bold text-emerald-400 mt-0.5">
+                                ${(h.value || 0).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}
+                              </p>
+                              <div className="mt-2 pt-2 border-t border-[#27272A] flex justify-between items-center text-[10px]">
+                                <span className="text-gray-500">Amount:</span>
+                                <span className="text-gray-300 font-medium">{h.amount.toFixed(4)} shares</span>
+                              </div>
+                              <div className="mt-1 flex justify-between items-center text-[10px]">
+                                <span className="text-gray-500">Bought at:</span>
+                                <span className="text-gray-300 font-medium">${(h.latest_price || 0).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+                              </div>
+                            </div>
+                          ))}
                         </div>
-                      ))}
-                    </div>
-                 ) : (
-                   <div className="p-6 text-gray-500 text-center text-sm">No assets currently held. 100% Cash.</div>
-                 )}
-               </div>
-
-               {/* Unified Ledger */}
-               <div className="bg-[#141414] border border-[#27272A] rounded-2xl shadow-xl overflow-hidden">
-                 <div className="px-6 py-4 border-b border-[#27272A] bg-[#0A0A0B] flex items-center gap-2">
-                   <History className="w-4 h-4 text-gray-400" />
-                   <h3 className="font-bold text-white">Global Trade Ledger</h3>
+                     ) : (
+                       <div className="flex h-full items-center justify-center text-gray-500 text-xs">No assets currently held. 100% Cash.</div>
+                     )}
+                   </div>
                  </div>
-                 <div className="overflow-x-auto max-h-[400px]">
-                   <table className="w-full text-left text-sm">
-                     <thead className="bg-[#141414] text-gray-400 border-b border-[#27272A] sticky top-0">
-                       <tr>
-                         <th className="px-6 py-4 font-medium">Timestamp</th>
-                         <th className="px-6 py-4 font-medium">Asset</th>
-                         <th className="px-6 py-4 font-medium">Action</th>
-                         <th className="px-6 py-4 font-medium">Shares</th>
-                         <th className="px-6 py-4 font-medium">Price</th>
-                         <th className="px-6 py-4 font-medium">Cash After</th>
-                       </tr>
-                     </thead>
-                     <tbody className="divide-y divide-white/5">
-                       {portfolioData.ledger.length > 0 ? portfolioData.ledger.map((row: any, idx: number) => (
-                         <tr key={idx} className="hover:bg-[#27272A]/20 transition-colors">
-                           <td className="px-6 py-4 text-gray-300 font-mono text-xs">{row.timestamp}</td>
-                           <td className="px-6 py-4 text-white font-bold">{row.ticker}</td>
-                           <td className="px-6 py-4">
-                             <span className={`px-2.5 py-1 rounded-md text-xs font-bold ${row.action === 'BUY' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-rose-500/20 text-rose-400'}`}>
-                               {row.action}
-                             </span>
-                           </td>
-                           <td className="px-6 py-4 text-gray-300">{row.shares_traded.toFixed(4)}</td>
-                           <td className="px-6 py-4 text-gray-300">${row.price.toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2})}</td>
-                           <td className="px-6 py-4 text-gray-400">${row.cash_after.toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2})}</td>
+
+                 {/* Unified Ledger (Right) */}
+                 <div className="flex-[1.2] flex flex-col min-w-0 bg-[#141414] border border-[#27272A] rounded-xl shadow-sm overflow-hidden">
+                   <div className="px-4 py-3 border-b border-[#27272A] bg-[#0A0A0B] flex items-center gap-2 shrink-0">
+                     <History className="w-4 h-4 text-gray-400" />
+                     <h3 className="text-sm font-bold text-white">Global Trade Ledger</h3>
+                   </div>
+                   <div className="flex-1 overflow-y-auto min-h-0">
+                     <table className="w-full text-left text-xs">
+                       <thead className="bg-[#141414] text-gray-400 border-b border-[#27272A] sticky top-0 z-10">
+                         <tr>
+                           <th className="px-4 py-3 font-medium whitespace-nowrap">Timestamp</th>
+                           <th className="px-4 py-3 font-medium">Asset</th>
+                           <th className="px-4 py-3 font-medium">Action</th>
+                           <th className="px-4 py-3 font-medium">Shares</th>
+                           <th className="px-4 py-3 font-medium whitespace-nowrap">Price</th>
+                           <th className="px-4 py-3 font-medium whitespace-nowrap">Cash After</th>
                          </tr>
-                       )) : (
-                         <tr><td colSpan={6} className="px-6 py-8 text-center text-gray-500">No trades have been executed yet.</td></tr>
-                       )}
-                     </tbody>
-                   </table>
+                       </thead>
+                       <tbody className="divide-y divide-white/5">
+                         {portfolioData.ledger.length > 0 ? portfolioData.ledger.map((row: any, idx: number) => (
+                           <tr key={idx} className="hover:bg-[#27272A]/20 transition-colors">
+                             <td className="px-4 py-3 text-gray-300 font-mono text-[10px] whitespace-nowrap">{row.timestamp}</td>
+                             <td className="px-4 py-3 text-white font-bold">{row.ticker}</td>
+                             <td className="px-4 py-3">
+                               <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${row.action === 'BUY' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-rose-500/20 text-rose-400'}`}>
+                                 {row.action}
+                               </span>
+                             </td>
+                             <td className="px-4 py-3 text-gray-300">{row.shares_traded.toFixed(4)}</td>
+                             <td className="px-4 py-3 text-gray-300">${row.price.toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2})}</td>
+                             <td className="px-4 py-3 text-gray-400">${row.cash_after.toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2})}</td>
+                           </tr>
+                         )) : (
+                           <tr><td colSpan={6} className="px-4 py-8 text-center text-gray-500 text-xs">No trades have been executed yet.</td></tr>
+                         )}
+                       </tbody>
+                     </table>
+                   </div>
                  </div>
                </div>
              </>
            ) : (
-             <div className="text-gray-400 mt-10 text-center">Failed to load portfolio.</div>
+             <div className="text-gray-400 mt-10 text-center text-sm flex-1">Failed to load portfolio.</div>
            )}
         </div>
-        </div>
+
       ) : (
         /* Scoreboard View */
         <div className="flex-1 overflow-y-auto pr-2">

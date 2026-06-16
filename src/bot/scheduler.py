@@ -3,7 +3,7 @@ import time
 import requests
 import os
 
-API_URL = os.getenv("API_URL", "http://api-server:8000")
+API_URL = os.getenv("API_URL", "http://127.0.0.1:7860")
 
 def trigger_daily_cycle():
     print(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] Triggering Multi-Asset Trading Cycle...")

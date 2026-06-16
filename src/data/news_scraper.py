@@ -54,6 +54,7 @@ def fetch_recent_news(ticker: str, limit: int = 5) -> list:
         summary = item.findtext('description', '').strip()
         publisher = item.findtext('source', 'Yahoo Finance').strip()
         pub_date = item.findtext('pubDate', '').strip()
+        link = item.findtext('link', '').strip()
 
         if not title:
             continue
@@ -63,6 +64,7 @@ def fetch_recent_news(ticker: str, limit: int = 5) -> list:
             "summary": summary,
             "publisher": publisher,
             "published_at": pub_date,
+            "url": link,
         })
 
     if not results:
@@ -96,6 +98,7 @@ def _fallback_google_news(ticker: str, limit: int = 5) -> list:
         summary = item.findtext('description', title).strip()
         publisher = item.findtext('source', 'Google News').strip()
         pub_date = item.findtext('pubDate', '').strip()
+        link = item.findtext('link', '').strip()
 
         if not title:
             continue
@@ -105,6 +108,7 @@ def _fallback_google_news(ticker: str, limit: int = 5) -> list:
             "summary": summary,
             "publisher": publisher,
             "published_at": pub_date,
+            "url": link,
         })
 
     return results

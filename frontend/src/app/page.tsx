@@ -353,18 +353,20 @@ export default function Dashboard() {
             {sentimentData && sentimentData.news && (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {sentimentData.news.map((n: any, i: number) => (
-                  <div key={i} className="flex items-start gap-3 p-4 rounded-xl bg-[#27272A]/30 border border-white/5 hover:bg-[#27272A]/60 transition-colors">
-                    <div className={`mt-1 flex-shrink-0 w-2.5 h-2.5 rounded-full ${n.sentiment_label === 'positive' ? 'bg-emerald-500' : n.sentiment_label === 'negative' ? 'bg-rose-500' : 'bg-amber-500'}`}></div>
-                    <div className="flex-1 min-w-0">
-                      <h4 className="text-sm font-medium text-gray-200 line-clamp-2">{n.title}</h4>
-                      <div className="flex justify-between items-center mt-2">
-                        <p className="text-xs text-gray-500">{n.publisher}</p>
-                        <div className="text-xs font-mono font-medium" style={{ color: n.sentiment_score > 0 ? '#34d399' : n.sentiment_score < 0 ? '#fb7185' : '#fbbf24' }}>
-                          {n.sentiment_score > 0 ? '+' : ''}{n.sentiment_score.toFixed(2)}
+                  <a key={i} href={n.url || "#"} target="_blank" rel="noopener noreferrer" className="block focus:outline-none">
+                    <div className="flex items-start gap-3 p-4 rounded-xl bg-[#27272A]/30 border border-white/5 hover:bg-[#27272A]/60 transition-colors h-full cursor-pointer">
+                      <div className={`mt-1 flex-shrink-0 w-2.5 h-2.5 rounded-full ${n.sentiment_label === 'positive' ? 'bg-emerald-500' : n.sentiment_label === 'negative' ? 'bg-rose-500' : 'bg-amber-500'}`}></div>
+                      <div className="flex-1 min-w-0">
+                        <h4 className="text-sm font-medium text-gray-200 line-clamp-2 hover:text-blue-400 transition-colors">{n.title}</h4>
+                        <div className="flex justify-between items-center mt-2">
+                          <p className="text-xs text-gray-500">{n.publisher}</p>
+                          <div className="text-xs font-mono font-medium" style={{ color: n.sentiment_score > 0 ? '#34d399' : n.sentiment_score < 0 ? '#fb7185' : '#fbbf24' }}>
+                            {n.sentiment_score > 0 ? '+' : ''}{n.sentiment_score.toFixed(2)}
+                          </div>
                         </div>
                       </div>
                     </div>
-                  </div>
+                  </a>
                 ))}
               </div>
             )}

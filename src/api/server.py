@@ -100,22 +100,28 @@ def predict_regime(ticker: str = "^GSPC", period: str = "5y"):
     pca = models[ticker]['pca']
     hmm_model = models[ticker]['hmm']
     
-    # 1. Fetch Data
+    # 1. Fetch Data — try live first, fall back to cached CSV
+    safe_ticker = ticker.replace("-", "_")
+    data_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', 'data', safe_ticker))
+    features_path = os.path.join(data_dir, "features.csv")
+    
+    features_df = None
     try:
         raw_df = yf.download(ticker, period=period, session=yf_session)
         if isinstance(raw_df.columns, pd.MultiIndex):
             raw_df.columns = raw_df.columns.get_level_values(0)
+        if not raw_df.empty:
+            features_df = engineer_features_df(raw_df.copy())
     except Exception as e:
-        raise HTTPException(status_code=400, detail=f"Failed to fetch data: {e}")
-        
-    if raw_df.empty:
-        raise HTTPException(status_code=404, detail="No data found for ticker.")
-
-    # 2. Engineer Features
-    try:
-        features_df = engineer_features_df(raw_df.copy())
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Feature engineering failed: {e}")
+        print(f"yfinance failed for {ticker}: {e}. Falling back to cached CSV.")
+    
+    # Fall back to pre-cached CSV if live fetch failed
+    if features_df is None or features_df.empty:
+        if not os.path.exists(features_path):
+            raise HTTPException(status_code=404, detail=f"No data found for ticker {ticker}.")
+        features_df = pd.read_csv(features_path, index_col='Date', parse_dates=True)
+        features_df.ffill(inplace=True)
+        features_df.fillna(0, inplace=True)
 
     feature_cols = [
         'Log_Return', 'Volatility_21d', 'Momentum_21d', 
@@ -416,13 +422,27 @@ def get_forecast(ticker: str = "^GSPC"):
         raise HTTPException(status_code=500, detail=f"LSTM Models not found for {ticker}. Did you run train_lstm.py? {e}")
 
     try:
-        # 1. We need the last 21 days of features
-        # Re-use the data fetching and HMM prediction logic to build the 21-day sequence
-        raw_df = yf.download(ticker, period="6mo", session=yf_session) # Get enough buffer for 252d drawdown if needed, or rely on available data
-        if isinstance(raw_df.columns, pd.MultiIndex):
-            raw_df.columns = raw_df.columns.get_level_values(0)
-            
-        features_df = engineer_features_df(raw_df.copy())
+        # 1. Fetch Data — try live first, fall back to cached CSV
+        safe_ticker_fcast = ticker.replace("-", "_")
+        data_dir_fcast = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', 'data', safe_ticker_fcast))
+        features_path_fcast = os.path.join(data_dir_fcast, "features.csv")
+        
+        features_df = None
+        try:
+            raw_df = yf.download(ticker, period="6mo", session=yf_session)
+            if isinstance(raw_df.columns, pd.MultiIndex):
+                raw_df.columns = raw_df.columns.get_level_values(0)
+            if not raw_df.empty:
+                features_df = engineer_features_df(raw_df.copy())
+        except Exception as e:
+            print(f"yfinance failed for {ticker} in forecast: {e}. Falling back to cached CSV.")
+        
+        if features_df is None or features_df.empty:
+            if not os.path.exists(features_path_fcast):
+                raise HTTPException(status_code=404, detail=f"No cached data for {ticker}.")
+            features_df = pd.read_csv(features_path_fcast, index_col='Date', parse_dates=True)
+            features_df.ffill(inplace=True)
+            features_df.fillna(0, inplace=True)
         
         # HMM Probabilities
         scaler_hmm = models[ticker]['scaler']

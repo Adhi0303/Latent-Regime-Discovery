@@ -282,14 +282,25 @@ export default function Dashboard() {
       {/* Main Content */}
       <main className="flex-1 flex flex-col overflow-hidden bg-[#0A0A0B]">
         {/* Top Header */}
-        <header className="h-16 border-b border-[#27272A] flex items-center justify-between px-8 shrink-0 bg-[#0A0A0B]">
-          <h1 className="text-lg font-semibold text-white">
+        <header className="h-16 border-b border-[#27272A] flex items-center justify-between px-8 shrink-0 bg-[#0A0A0B] relative">
+          <h1 className="text-lg font-semibold text-white w-1/3">
             {viewMode === "dashboard" && "Live Dashboard"}
             {viewMode === "backtest" && "Strategy Simulator"}
             {viewMode === "bot" && "Multi-Asset Portfolio Bot"}
             {viewMode === "scoreboard" && "AI Scoreboard"}
           </h1>
-          <div className="flex items-center gap-4">
+
+          <div className="absolute left-1/2 -translate-x-1/2 flex flex-col items-center">
+            <span className="text-[10px] text-gray-500 uppercase tracking-wider font-semibold mb-0.5">Wall Street Time</span>
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-mono font-medium text-gray-200">{nyTimeStr || "..."}</span>
+              <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${marketOpen ? 'bg-emerald-400/10 text-emerald-400 border border-emerald-400/20' : 'bg-rose-400/10 text-rose-400 border border-rose-400/20'}`}>
+                {marketOpen ? 'OPEN' : 'CLOSED'}
+              </span>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-4 w-1/3 justify-end">
             <div className="flex bg-[#141414] border border-[#27272A] rounded-md p-0.5 gap-0.5">
               {[
                 { id: '^GSPC', label: 'S&P 500' },
@@ -313,16 +324,6 @@ export default function Dashboard() {
             </div>
             
             <div className="flex items-center gap-3">
-              <div className="flex flex-col items-end">
-                <span className="text-[10px] text-gray-500 uppercase tracking-wider font-semibold">Wall Street Time</span>
-                <div className="flex items-center gap-2">
-                  <span className="text-xs font-mono font-medium text-gray-200">{nyTimeStr || "..."}</span>
-                  <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${marketOpen ? 'bg-emerald-400/10 text-emerald-400 border border-emerald-400/20' : 'bg-rose-400/10 text-rose-400 border border-rose-400/20'}`}>
-                    {marketOpen ? 'OPEN' : 'CLOSED'}
-                  </span>
-                </div>
-              </div>
-
               <div className="flex items-center gap-2 rounded-md bg-[#141414] px-3 py-2 border border-[#27272A] h-full">
                 <span className="relative flex h-2 w-2">
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
@@ -399,7 +400,7 @@ export default function Dashboard() {
               {/* Side-by-Side Content */}
               <div className="flex-1 flex gap-4 min-h-0">
                 {/* Chart Section (Left) */}
-                <div className="flex-[2] rounded-xl bg-[#141414] border border-[#27272A] p-4 flex flex-col shadow-sm min-w-0">
+                <div className="flex-[3] rounded-xl bg-[#141414] border border-[#27272A] p-4 flex flex-col shadow-sm min-w-0">
                   <div className="mb-4 flex justify-between items-center shrink-0">
                     <h3 className="text-sm font-bold text-white">Historical Regime Map</h3>
                     <div className="flex items-center gap-2 bg-[#27272A]/50 p-1 rounded-md border border-[#27272A]">
@@ -486,7 +487,7 @@ export default function Dashboard() {
                 </div>
 
                 {/* Sentiment Section (Right) */}
-                <div className="flex-1 rounded-xl bg-[#141414] border border-[#27272A] p-4 flex flex-col shadow-sm min-w-0">
+                <div className="flex-[1] min-w-[280px] max-w-[350px] rounded-xl bg-[#141414] border border-[#27272A] p-4 flex flex-col shadow-sm">
                   <div className="mb-3 flex justify-between items-center shrink-0">
                     <h3 className="text-sm font-bold text-white flex items-center gap-2">
                       Macro Sentiment

@@ -219,69 +219,74 @@ export default function Dashboard() {
   const currentRegime = data.current_regime;
 
   return (
-    <div className="min-h-screen bg-[#0E0E10] text-[#e0e0e0] p-8 font-sans selection:bg-blue-500/30">
-      <header className="mb-10 flex items-center justify-between border-b border-white/5 pb-6">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight text-white">Latent Regime Discovery</h1>
-          <p className="text-sm text-gray-400 mt-1">Autonomous Quantitative Strategy Dashboard</p>
-        </div>
-        <div className="flex items-center gap-4">
-          <select 
-            className="bg-[#18181B] border border-white/10 text-white text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2 outline-none cursor-pointer"
-            value={selectedTicker}
-            onChange={(e) => setSelectedTicker(e.target.value)}
-          >
-            <option value="^GSPC">S&P 500 (^GSPC)</option>
-            <option value="BTC-USD">Bitcoin (BTC-USD)</option>
-            <option value="TSLA">Tesla (TSLA)</option>
-            <option value="NVDA">Nvidia (NVDA)</option>
-            <option value="BRK-B">Berkshire Hathaway (BRK-B)</option>
-          </select>
-          <div className="flex items-center gap-2 rounded-full bg-blue-500/10 px-4 py-2 border border-blue-500/20">
-            <span className="relative flex h-3 w-3">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-3 w-3 bg-blue-500"></span>
-            </span>
-            <span className="text-sm font-medium text-blue-400 hidden sm:inline">Live API Connection</span>
+    <div className="flex h-screen bg-[#0A0A0B] text-[#e0e0e0] font-sans selection:bg-blue-500/30 overflow-hidden">
+      {/* Sidebar */}
+      <aside className="w-64 border-r border-[#27272A] bg-[#0A0A0B] flex flex-col shrink-0">
+        <div className="h-16 flex items-center px-6 border-b border-[#27272A]">
+          <div className="flex items-center gap-2">
+            <Cpu className="w-5 h-5 text-blue-500" />
+            <span className="font-bold text-sm tracking-wide text-white">Latent Discovery</span>
           </div>
         </div>
-      </header>
+        <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
+          <div className="text-xs font-semibold text-gray-500 mb-2 mt-2 px-2 uppercase tracking-wider">Dashboard</div>
+          <button onClick={() => setViewMode("dashboard")} className={`w-full flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors ${viewMode === 'dashboard' ? 'bg-[#141414] text-white border border-[#27272A]' : 'text-gray-400 hover:text-white hover:bg-[#141414] border border-transparent'}`}>
+            <Activity className="w-4 h-4" /> Live Overview
+          </button>
+          <button onClick={() => setViewMode("backtest")} className={`w-full flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors ${viewMode === 'backtest' ? 'bg-[#141414] text-white border border-[#27272A]' : 'text-gray-400 hover:text-white hover:bg-[#141414] border border-transparent'}`}>
+            <History className="w-4 h-4" /> Strategy Simulator
+          </button>
+          <div className="text-xs font-semibold text-gray-500 mb-2 mt-6 px-2 uppercase tracking-wider">Trading</div>
+          <button onClick={() => setViewMode("bot")} className={`w-full flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors ${viewMode === 'bot' ? 'bg-[#141414] text-white border border-[#27272A]' : 'text-gray-400 hover:text-white hover:bg-[#141414] border border-transparent'}`}>
+            <Briefcase className="w-4 h-4" /> Portfolio Bot
+          </button>
+          <button onClick={() => setViewMode("scoreboard")} className={`w-full flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors ${viewMode === 'scoreboard' ? 'bg-[#141414] text-white border border-[#27272A]' : 'text-gray-400 hover:text-white hover:bg-[#141414] border border-transparent'}`}>
+            <TrendingUp className="w-4 h-4" /> AI Scoreboard
+          </button>
+        </nav>
+      </aside>
 
-      {/* View Toggle */}
-      <div className="flex gap-4 mb-8 border-b border-white/10 pb-4">
-        <button 
-          className={`px-4 py-2 rounded-lg font-medium text-sm transition-colors ${viewMode === 'dashboard' ? 'bg-blue-500 text-white' : 'bg-transparent text-gray-400 hover:text-white hover:bg-white/5'}`}
-          onClick={() => setViewMode("dashboard")}
-        >
-          Live Dashboard
-        </button>
-        <button 
-          className={`px-4 py-2 rounded-lg font-medium text-sm transition-colors ${viewMode === 'backtest' ? 'bg-purple-500 text-white' : 'bg-transparent text-gray-400 hover:text-white hover:bg-white/5'}`}
-          onClick={() => setViewMode("backtest")}
-        >
-          Strategy Simulator
-        </button>
-        <button 
-          className={`px-4 py-2 rounded-lg font-medium text-sm transition-colors ${viewMode === 'bot' ? 'bg-emerald-600 text-white' : 'bg-transparent text-gray-400 hover:text-white hover:bg-white/5'}`}
-          onClick={() => setViewMode("bot")}
-        >
-          Multi-Asset Portfolio Bot
-        </button>
-        <button 
-          className={`px-4 py-2 rounded-lg font-medium text-sm transition-colors ${viewMode === 'scoreboard' ? 'bg-rose-600 text-white' : 'bg-transparent text-gray-400 hover:text-white hover:bg-white/5'}`}
-          onClick={() => setViewMode("scoreboard")}
-        >
-          AI Scoreboard
-        </button>
-      </div>
+      {/* Main Content */}
+      <main className="flex-1 flex flex-col overflow-hidden bg-[#0A0A0B]">
+        {/* Top Header */}
+        <header className="h-16 border-b border-[#27272A] flex items-center justify-between px-8 shrink-0 bg-[#0A0A0B]">
+          <h1 className="text-lg font-semibold text-white">
+            {viewMode === "dashboard" && "Live Dashboard"}
+            {viewMode === "backtest" && "Strategy Simulator"}
+            {viewMode === "bot" && "Multi-Asset Portfolio Bot"}
+            {viewMode === "scoreboard" && "AI Scoreboard"}
+          </h1>
+          <div className="flex items-center gap-4">
+            <select 
+              className="bg-[#141414] border border-[#27272A] text-white text-sm rounded-md focus:ring-blue-500 focus:border-blue-500 block py-1.5 px-3 outline-none cursor-pointer"
+              value={selectedTicker}
+              onChange={(e) => setSelectedTicker(e.target.value)}
+            >
+              <option value="^GSPC">S&P 500 (^GSPC)</option>
+              <option value="BTC-USD">Bitcoin (BTC-USD)</option>
+              <option value="TSLA">Tesla (TSLA)</option>
+              <option value="NVDA">Nvidia (NVDA)</option>
+              <option value="BRK-B">Berkshire Hathaway (BRK-B)</option>
+            </select>
+            <div className="flex items-center gap-2 rounded-md bg-[#141414] px-3 py-1.5 border border-[#27272A]">
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-500"></span>
+              </span>
+              <span className="text-xs font-medium text-gray-300">Live API Connection</span>
+            </div>
+          </div>
+        </header>
 
-      {viewMode === "dashboard" ? (
-        <>
-          {/* Top Cards Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-10">
+        {/* Scrollable Content Area */}
+        <div className="flex-1 overflow-y-auto p-8">
+          {viewMode === "dashboard" ? (
+            <>
+              {/* Top Cards Grid */}
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
             
             {/* Card 1: Asset / Price */}
-            <div className="rounded-2xl bg-[#18181B] border border-white/5 p-6 shadow-xl relative overflow-hidden group">
+            <div className="rounded-2xl bg-[#141414] border border-[#27272A] p-6 shadow-xl relative overflow-hidden group">
               <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/5 rounded-full blur-3xl -mr-10 -mt-10 transition-all group-hover:bg-blue-500/10"></div>
               <p className="text-sm font-medium text-gray-400 mb-1">Asset Tracked</p>
               <h2 className="text-4xl font-bold text-white tracking-tight">{data.ticker}</h2>
@@ -294,7 +299,7 @@ export default function Dashboard() {
             </div>
 
             {/* Card 1.5: LSTM Forecast */}
-            <div className="rounded-2xl bg-[#18181B] border border-white/5 p-6 shadow-xl relative overflow-hidden group">
+            <div className="rounded-2xl bg-[#141414] border border-[#27272A] p-6 shadow-xl relative overflow-hidden group">
               <div className="absolute top-0 right-0 w-32 h-32 bg-purple-500/5 rounded-full blur-3xl -mr-10 -mt-10 transition-all group-hover:bg-purple-500/10"></div>
               <p className="text-sm font-medium text-gray-400 mb-1">AI Price Forecast (Tomorrow)</p>
               {forecastLoading ? (
@@ -320,7 +325,7 @@ export default function Dashboard() {
             </div>
 
             {/* Card 2: Current Regime */}
-            <div className="rounded-2xl bg-[#18181B] border border-white/5 p-6 shadow-xl relative overflow-hidden">
+            <div className="rounded-2xl bg-[#141414] border border-[#27272A] p-6 shadow-xl relative overflow-hidden">
               <div className={`absolute top-0 right-0 w-32 h-32 rounded-full blur-3xl -mr-10 -mt-10 ${currentRegime === 0 ? 'bg-emerald-500/10' : currentRegime === 1 ? 'bg-amber-500/10' : 'bg-rose-500/10'}`}></div>
               <p className="text-sm font-medium text-gray-400 mb-1">AI Detected Regime</p>
               <h2 className={`text-3xl font-bold tracking-tight ${regimeTextColors[currentRegime]}`}>
@@ -335,7 +340,7 @@ export default function Dashboard() {
             </div>
 
             {/* Card 3: Probabilities */}
-            <div className="rounded-2xl bg-[#18181B] border border-white/5 p-6 shadow-xl flex flex-col justify-between">
+            <div className="rounded-2xl bg-[#141414] border border-[#27272A] p-6 shadow-xl flex flex-col justify-between">
               <p className="text-sm font-medium text-gray-400 mb-4">Regime Probabilities</p>
               <div className="space-y-4">
                 <div>
@@ -371,7 +376,7 @@ export default function Dashboard() {
           </div>
 
           {/* Macro Sentiment Section */}
-          <div className="rounded-2xl bg-[#18181B] border border-white/5 p-6 shadow-xl mb-10">
+          <div className="rounded-2xl bg-[#141414] border border-[#27272A] p-6 shadow-xl mb-10">
             <div className="flex justify-between items-center mb-6">
               <div>
                 <h3 className="text-lg font-bold text-white flex items-center gap-2">
@@ -399,7 +404,7 @@ export default function Dashboard() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {sentimentData.news.map((n: any, i: number) => (
                   <a key={i} href={n.url || "#"} target="_blank" rel="noopener noreferrer" className="block focus:outline-none">
-                    <div className="flex items-start gap-3 p-4 rounded-xl bg-[#27272A]/30 border border-white/5 hover:bg-[#27272A]/60 transition-colors h-full cursor-pointer">
+                    <div className="flex items-start gap-3 p-4 rounded-xl bg-[#0A0A0B] border border-[#27272A] hover:bg-[#1C1C1E] transition-colors h-full cursor-pointer">
                       <div className={`mt-1 flex-shrink-0 w-2.5 h-2.5 rounded-full ${n.sentiment_label === 'positive' ? 'bg-emerald-500' : n.sentiment_label === 'negative' ? 'bg-rose-500' : 'bg-amber-500'}`}></div>
                       <div className="flex-1 min-w-0">
                         <h4 className="text-sm font-medium text-gray-200 line-clamp-2 hover:text-blue-400 transition-colors">{n.title}</h4>
@@ -418,7 +423,7 @@ export default function Dashboard() {
           </div>
 
           {/* Chart Section */}
-          <div className="rounded-2xl bg-[#18181B] border border-white/5 p-6 shadow-xl">
+          <div className="rounded-2xl bg-[#141414] border border-[#27272A] p-6 shadow-xl">
             <div className="mb-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
               <div>
                 <h3 className="text-lg font-bold text-white">Historical Regime Map</h3>
@@ -427,7 +432,7 @@ export default function Dashboard() {
 
               <div className="flex flex-col gap-3">
                 {/* Timeframe Filters */}
-                <div className="flex items-center gap-2 bg-[#27272A]/50 p-1 rounded-lg border border-white/5 self-end">
+                <div className="flex items-center gap-2 bg-[#27272A]/50 p-1 rounded-lg border border-[#27272A] self-end">
                   {['1w', '1m', '6m', '1y', 'all'].map((tf) => (
                     <button
                       key={tf}
@@ -458,7 +463,7 @@ export default function Dashboard() {
                     <button
                       key={r.id}
                       onClick={() => setShowRegimes(prev => ({ ...prev, [r.id]: !prev[r.id as keyof typeof showRegimes] }))}
-                      className={`flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium transition-colors border ${showRegimes[r.id as keyof typeof showRegimes] ? 'bg-[#27272A] border-white/10 text-gray-300' : 'bg-transparent border-transparent text-gray-600'}`}
+                      className={`flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium transition-colors border ${showRegimes[r.id as keyof typeof showRegimes] ? 'bg-[#27272A] border-[#27272A] text-gray-300' : 'bg-transparent border-transparent text-gray-600'}`}
                     >
                       <div className={`w-2 h-2 rounded-full ${showRegimes[r.id as keyof typeof showRegimes] ? r.color : 'bg-gray-600'}`}></div>
                       {r.label}
@@ -552,7 +557,7 @@ export default function Dashboard() {
             <>
               {/* KPIs */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div className="rounded-2xl bg-[#18181B] border border-white/5 p-6 shadow-xl relative overflow-hidden">
+                <div className="rounded-2xl bg-[#141414] border border-[#27272A] p-6 shadow-xl relative overflow-hidden">
                   <div className="absolute top-0 right-0 w-32 h-32 bg-purple-500/10 rounded-full blur-3xl -mr-10 -mt-10"></div>
                   <p className="text-sm font-medium text-gray-400 mb-1">AI Strategy Total Return</p>
                   <h2 className="text-4xl font-bold tracking-tight text-white mt-2">
@@ -561,7 +566,7 @@ export default function Dashboard() {
                   <p className="text-sm text-gray-500 mt-2">Max Drawdown: <span className="text-rose-400">{backtestData.metrics.ai_max_dd}%</span></p>
                 </div>
                 
-                <div className="rounded-2xl bg-[#18181B] border border-white/5 p-6 shadow-xl relative overflow-hidden">
+                <div className="rounded-2xl bg-[#141414] border border-[#27272A] p-6 shadow-xl relative overflow-hidden">
                   <p className="text-sm font-medium text-gray-400 mb-1">Buy & Hold Return</p>
                   <h2 className="text-4xl font-bold tracking-tight text-gray-300 mt-2">
                     {backtestData.metrics.buy_hold_return > 0 ? '+' : ''}{backtestData.metrics.buy_hold_return.toLocaleString()}%
@@ -569,7 +574,7 @@ export default function Dashboard() {
                   <p className="text-sm text-gray-500 mt-2">Max Drawdown: <span className="text-rose-400">{backtestData.metrics.buy_hold_max_dd}%</span></p>
                 </div>
 
-                <div className="rounded-2xl bg-[#18181B] border border-white/5 p-6 shadow-xl relative overflow-hidden">
+                <div className="rounded-2xl bg-[#141414] border border-[#27272A] p-6 shadow-xl relative overflow-hidden">
                   <div className={`absolute top-0 right-0 w-32 h-32 rounded-full blur-3xl -mr-10 -mt-10 ${backtestData.metrics.alpha > 0 ? 'bg-emerald-500/10' : 'bg-rose-500/10'}`}></div>
                   <p className="text-sm font-medium text-gray-400 mb-1">AI Alpha (Outperformance)</p>
                   <h2 className={`text-4xl font-bold tracking-tight mt-2 ${backtestData.metrics.alpha > 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
@@ -580,7 +585,7 @@ export default function Dashboard() {
               </div>
 
               {/* Chart Section */}
-              <div className="rounded-2xl bg-[#18181B] border border-white/5 p-6 shadow-xl">
+              <div className="rounded-2xl bg-[#141414] border border-[#27272A] p-6 shadow-xl">
                 <div className="mb-6">
                   <h3 className="text-lg font-bold text-white">Historical Portfolio Value ($)</h3>
                   <p className="text-sm text-gray-500">Starting with $10,000. AI Strategy (Purple) vs Buy & Hold (White).</p>
@@ -664,7 +669,7 @@ export default function Dashboard() {
            ) : portfolioData ? (
              <>
                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-                 <div className="bg-[#18181B] border border-emerald-500/20 p-6 rounded-2xl shadow-xl flex items-center gap-4">
+                 <div className="bg-[#141414] border border-emerald-500/20 p-6 rounded-2xl shadow-xl flex items-center gap-4">
                    <div className="bg-emerald-500/10 p-4 rounded-full"><Briefcase className="text-emerald-400 w-8 h-8" /></div>
                    <div>
                      <p className="text-emerald-500 text-sm font-medium mb-1">Global Portfolio Value</p>
@@ -675,7 +680,7 @@ export default function Dashboard() {
                      </h3>
                    </div>
                  </div>
-                 <div className="bg-[#18181B] border border-white/5 p-6 rounded-2xl shadow-xl flex items-center gap-4">
+                 <div className="bg-[#141414] border border-[#27272A] p-6 rounded-2xl shadow-xl flex items-center gap-4">
                    <div className="bg-blue-500/10 p-4 rounded-full"><Wallet className="text-blue-400 w-8 h-8" /></div>
                    <div>
                      <p className="text-gray-400 text-sm font-medium mb-1">Available Cash (Dry Powder)</p>
@@ -685,20 +690,20 @@ export default function Dashboard() {
                </div>
 
                {/* Current Holdings Table */}
-               <div className="bg-[#18181B] border border-white/5 rounded-2xl shadow-xl overflow-hidden mb-8">
-                 <div className="px-6 py-4 border-b border-white/5 bg-[#27272A]/30 flex items-center gap-2">
+               <div className="bg-[#141414] border border-[#27272A] rounded-2xl shadow-xl overflow-hidden mb-8">
+                 <div className="px-6 py-4 border-b border-[#27272A] bg-[#0A0A0B] flex items-center gap-2">
                    <Activity className="w-4 h-4 text-emerald-400" />
                    <h3 className="font-bold text-white">Live Asset Holdings</h3>
                  </div>
                  {portfolioData.holdings.length > 0 ? (
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-6">
                       {portfolioData.holdings.map((h: any, idx: number) => (
-                        <div key={idx} className="bg-[#27272A]/30 border border-white/5 p-4 rounded-xl flex flex-col">
+                        <div key={idx} className="bg-[#0A0A0B] border border-[#27272A] p-4 rounded-xl flex flex-col">
                           <p className="text-sm font-bold text-gray-400">{h.ticker}</p>
                           <p className="text-2xl font-bold text-emerald-400 mt-1">
                             ${(h.value || 0).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}
                           </p>
-                          <div className="mt-3 pt-3 border-t border-white/5 flex justify-between items-center text-xs">
+                          <div className="mt-3 pt-3 border-t border-[#27272A] flex justify-between items-center text-xs">
                             <span className="text-gray-500">Amount:</span>
                             <span className="text-gray-300 font-medium">{h.amount.toFixed(4)} shares</span>
                           </div>
@@ -715,14 +720,14 @@ export default function Dashboard() {
                </div>
 
                {/* Unified Ledger */}
-               <div className="bg-[#18181B] border border-white/5 rounded-2xl shadow-xl overflow-hidden">
-                 <div className="px-6 py-4 border-b border-white/5 bg-[#27272A]/30 flex items-center gap-2">
+               <div className="bg-[#141414] border border-[#27272A] rounded-2xl shadow-xl overflow-hidden">
+                 <div className="px-6 py-4 border-b border-[#27272A] bg-[#0A0A0B] flex items-center gap-2">
                    <History className="w-4 h-4 text-gray-400" />
                    <h3 className="font-bold text-white">Global Trade Ledger</h3>
                  </div>
                  <div className="overflow-x-auto max-h-[400px]">
                    <table className="w-full text-left text-sm">
-                     <thead className="bg-[#18181B] text-gray-400 border-b border-white/10 sticky top-0">
+                     <thead className="bg-[#141414] text-gray-400 border-b border-[#27272A] sticky top-0">
                        <tr>
                          <th className="px-6 py-4 font-medium">Timestamp</th>
                          <th className="px-6 py-4 font-medium">Asset</th>
@@ -780,7 +785,7 @@ export default function Dashboard() {
                  <p>Fetching prediction history...</p>
                </div>
            ) : predictionsData && predictionsData.predictions && predictionsData.predictions.length > 0 ? (
-             <div className="rounded-2xl bg-[#18181B] border border-white/5 p-6 shadow-xl">
+             <div className="rounded-2xl bg-[#141414] border border-[#27272A] p-6 shadow-xl">
                <div className="h-[500px] w-full">
                   <ResponsiveContainer width="100%" height="100%">
                     <LineChart data={predictionsData.predictions} margin={{ top: 10, right: 10, left: 20, bottom: 0 }}>
@@ -838,7 +843,8 @@ export default function Dashboard() {
            )}
         </div>
       )}
-      
+        </div>
+      </main>
     </div>
   );
 }

@@ -30,7 +30,7 @@ async def run_scheduler():
     from src.bot.scheduler import setup_scheduler
     setup_scheduler()
     while True:
-        schedule.run_pending()
+        await asyncio.to_thread(schedule.run_pending)
         await asyncio.sleep(60)
 
 @asynccontextmanager
@@ -107,7 +107,7 @@ def predict_regime(ticker: str = "^GSPC", period: str = "5y"):
     
     features_df = None
     try:
-        raw_df = yf.download(ticker, period=period, session=yf_session)
+        raw_df = yf.download(ticker, period=period, session=yf_session, timeout=5)
         if isinstance(raw_df.columns, pd.MultiIndex):
             raw_df.columns = raw_df.columns.get_level_values(0)
         if not raw_df.empty:
@@ -461,7 +461,7 @@ def get_forecast(ticker: str = "^GSPC"):
         
         features_df = None
         try:
-            raw_df = yf.download(ticker, period="6mo", session=yf_session)
+            raw_df = yf.download(ticker, period="6mo", session=yf_session, timeout=5)
             if isinstance(raw_df.columns, pd.MultiIndex):
                 raw_df.columns = raw_df.columns.get_level_values(0)
             if not raw_df.empty:

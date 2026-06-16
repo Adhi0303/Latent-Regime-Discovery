@@ -691,14 +691,24 @@ export default function Dashboard() {
                    <h3 className="font-bold text-white">Live Asset Holdings</h3>
                  </div>
                  {portfolioData.holdings.length > 0 ? (
-                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-6">
-                     {portfolioData.holdings.map((h: any, idx: number) => (
-                       <div key={idx} className="bg-[#27272A]/30 border border-white/5 p-4 rounded-xl">
-                         <p className="text-sm text-gray-400">{h.ticker}</p>
-                         <p className="text-xl font-bold text-white mt-1">{h.amount.toFixed(4)} <span className="text-sm font-normal text-gray-500">shares</span></p>
-                       </div>
-                     ))}
-                   </div>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-6">
+                      {portfolioData.holdings.map((h: any, idx: number) => (
+                        <div key={idx} className="bg-[#27272A]/30 border border-white/5 p-4 rounded-xl flex flex-col">
+                          <p className="text-sm font-bold text-gray-400">{h.ticker}</p>
+                          <p className="text-2xl font-bold text-emerald-400 mt-1">
+                            ${(h.value || 0).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}
+                          </p>
+                          <div className="mt-3 pt-3 border-t border-white/5 flex justify-between items-center text-xs">
+                            <span className="text-gray-500">Amount:</span>
+                            <span className="text-gray-300 font-medium">{h.amount.toFixed(4)} shares</span>
+                          </div>
+                          <div className="mt-1 flex justify-between items-center text-xs">
+                            <span className="text-gray-500">Bought at:</span>
+                            <span className="text-gray-300 font-medium">${(h.latest_price || 0).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
                  ) : (
                    <div className="p-6 text-gray-500 text-center text-sm">No assets currently held. 100% Cash.</div>
                  )}

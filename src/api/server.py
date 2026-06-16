@@ -295,10 +295,32 @@ def get_bot_portfolio():
     row = cursor.fetchone()
     cash_balance = row[0] if row else 10000.0
     
-    # Holdings
+    # Holdings and their latest price
     cursor.execute('SELECT ticker, amount FROM holdings')
     holdings_rows = cursor.fetchall()
-    holdings = [{"ticker": r[0], "amount": r[1]} for r in holdings_rows]
+    
+    holdings = []
+    for r in holdings_rows:
+        ticker = r[0]
+        amount = r[1]
+        
+        # Get the latest price for this ticker from the ledger
+        cursor.execute('''
+            SELECT price FROM ledger 
+            WHERE ticker = ? 
+            ORDER BY timestamp DESC LIMIT 1
+        ''', (ticker,))
+        price_row = cursor.fetchone()
+        latest_price = price_row[0] if price_row else 0.0
+        
+        value = amount * latest_price
+        
+        holdings.append({
+            "ticker": ticker, 
+            "amount": amount,
+            "latest_price": latest_price,
+            "value": value
+        })
     
     # Ledger
     cursor.execute('''

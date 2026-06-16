@@ -1,91 +1,83 @@
-# Latent Regime Discovery: Interview Study Guide
+# Latent Regime Discovery: Architecture & Technical Study Guide
 
-This document is designed to help you prepare for technical interviews. It breaks down every major mathematical, machine learning, and software engineering concept used in this project, explaining **what it is**, **why we used it**, and **how it works under the hood**.
-
----
-
-## 1. Core Financial Concepts
-
-### Latent Regimes
-- **What it is:** "Latent" means hidden or unobservable. A "Regime" is a persistent state of the market (e.g., Bull, Bear, Sideways).
-- **Why we used it:** You cannot calculate a "Bear Market" with a simple math formula; it is an invisible state inferred from other visible data (price, volume, volatility).
-- **Interview Question:** *Why not just use a moving average crossover to detect a trend?* 
-  - **Answer:** Moving averages are lagging indicators. By the time a 50-day moving average crosses a 200-day moving average, the crash has already happened. Regime modeling detects the mathematical *environment* shifting before the price fully collapses.
-
-### Log Returns vs. Simple Returns
-- **What it is:** Instead of calculating percentage change as `(New - Old) / Old`, we use `ln(New / Old)`.
-- **Why we used it:** Log returns are "time additive." If a stock drops 50% and then gains 50%, a simple return calculation says you are even (wrong). Log returns mathematically account for compounding. Furthermore, log returns are usually normally distributed, which satisfies the mathematical assumptions required by our machine learning models.
-
-### Max Drawdown & Alpha
-- **Max Drawdown:** The maximum observed loss from a peak to a trough of a portfolio. It measures risk. Our AI strategy drastically reduced max drawdown by moving to cash during Bear regimes.
-- **Alpha:** A measure of performance on a risk-adjusted basis. If the S&P 500 returned 10% (Beta) and our AI returned 15%, the AI generated 5% of Alpha (outperformance).
+This document breaks down the entire technical architecture of the **Latent Regime Discovery** project. It explains every major software engineering, artificial intelligence, and machine learning concept used, how they work mathematically, and exactly where they are implemented in the codebase.
 
 ---
 
-## 2. Machine Learning: Unsupervised Learning
+## 1. Machine Learning: Unsupervised Learning
 
-### Hidden Markov Models (HMM)
-- **What it is:** A statistical Markov model in which the system being modeled is assumed to be a Markov process with unobservable (latent) states.
-- **How it works:** 
-  1. **Transition Matrix:** The probability of moving from one state to another (e.g., 90% chance a Bull market stays a Bull market tomorrow; 10% chance it shifts to Sideways).
-  2. **Emission Probabilities:** The probability of observing a certain volatility or momentum *given* that we are in a specific state. We used Gaussian Mixture Models (GMM) to model these emissions.
-- **Why we used it:** To cluster chaotic daily financial data into 3 distinct, actionable states without explicitly telling the algorithm what a "Bull" or "Bear" market looks like (Unsupervised Learning).
+### Gaussian Mixture Models (GMM) / Regime Detection
+- **What it is:** A probabilistic model that assumes all the data points are generated from a mixture of a finite number of Gaussian distributions with unknown parameters.
+- **How it works:** Instead of hard-clustering (like K-Means), GMM assigns probabilities to each data point belonging to a cluster (e.g., 90% Bull, 10% Sideways). It calculates the means and variances of these clusters using the Expectation-Maximization (EM) algorithm.
+- **Where it's implemented:** 
+  - `src/ml/models.py` (`MarketRegimeModel` class).
+- **Project Logic:** We feed historical price returns, volatility (standard deviation), and momentum indicators into the GMM. It clusters the chaotic financial data into 3 distinct, hidden market states (Bull, Sideways/Correction, Bear) without us ever explicitly defining the rules of those states.
 
 ### Principal Component Analysis (PCA)
 - **What it is:** A dimensionality reduction technique.
-- **How it works:** It takes highly correlated features (like Volatility and Drawdown) and projects them onto new, uncorrelated axes (Principal Components) while preserving as much variance (information) as possible.
-- **Why we used it:** HMMs struggle with "Multicollinearity" (when input features are highly correlated). If we feed the HMM two features that basically mean the same thing, it overweighs them. PCA condenses our 6 features into 2 mathematically pure components.
-
-### Robust Scaler
-- **What it is:** A data normalization technique that removes the median and scales the data according to the Interquartile Range (IQR).
-- **Why we used it:** Standard Scalers use the Mean and Standard Deviation. In finance, extreme outlier days (like the 2008 crash or 2020 COVID drop) heavily skew the mean. Robust Scaler ignores these extreme outliers, scaling the "normal" days perfectly.
+- **How it works:** It takes highly correlated features and projects them onto new, uncorrelated orthogonal axes (Principal Components) while preserving maximum variance.
+- **Where it's implemented:** 
+  - Combined with the standard scaler before passing data into the GMM in `src/ml/models.py`.
+- **Project Logic:** Financial indicators (like moving averages and momentum) are often highly collinear (they measure the same thing). PCA condenses our features into mathematically pure, independent signals so the GMM doesn't overweigh redundant data.
 
 ---
 
-## 3. Deep Learning: Supervised Learning
+## 2. Deep Learning: Supervised Learning
 
 ### Long Short-Term Memory Networks (LSTM)
-- **What it is:** A specialized Recurrent Neural Network (RNN) designed to process sequences of data.
-- **How it works:** Standard neural networks have no memory. RNNs have a looping mechanism to remember the last step. However, standard RNNs suffer from the "Vanishing Gradient Problem" (they forget things that happened 20 steps ago). LSTMs fix this by introducing a "Cell State" and three "Gates":
-  1. **Forget Gate:** Decides what information from the past to throw away.
-  2. **Input Gate:** Decides what new information to add to the cell state.
-  3. **Output Gate:** Decides what the next hidden state should be based on the cell state.
-- **Why we used it:** We feed it a "sequence" of the last 21 days of data. The LSTM remembers the trajectory of the past 3 weeks to predict exactly what the price will be on day 22.
+- **What it is:** A specialized form of Recurrent Neural Network (RNN) designed to process sequences of data over time without suffering from the vanishing gradient problem.
+- **How it works:** LSTMs use a "Cell State" running through the network to remember long-term context, controlled by three gates:
+  1. **Forget Gate:** Decides what past information to discard.
+  2. **Input Gate:** Decides what new data to add.
+  3. **Output Gate:** Calculates the prediction based on the cell state.
+- **Where it's implemented:**
+  - `src/ml/lstm_model.py` (`LSTMPredictor` class).
+- **Project Logic:** We slice historical price data into sequences of length `N` (e.g., the last 14 days). The LSTM learns the exact temporal patterns of these sequences to predict the price for day `N+1`. 
 
-### Backpropagation Through Time (BPTT)
-- **What it is:** The algorithm used to train LSTMs. It unrolls the recurrent network through time and calculates the gradient of the loss function (Mean Absolute Error) with respect to the weights, updating the network to reduce prediction errors.
-- **Context in Project:** Used in Module 11.6 (Auto-Retraining). When the scoreboard error gets too high, we run BPTT to adjust the LSTM's weights to the new market reality.
-
----
-
-## 4. Natural Language Processing (NLP) & GenAI
-
-### FinBERT (Transformers)
-- **What it is:** A pre-trained Large Language Model based on Google's BERT architecture, specifically fine-tuned on millions of financial texts, corporate reports, and analyst transcripts.
-- **How it works:** It uses the **Attention Mechanism**, allowing the model to weigh the importance of different words in a sentence regardless of their position. For example, it knows that the word "cut" in "interest rate cut" is positive for the stock market, whereas "cut" in "revenue cut" is negative.
-- **Why we used it:** To act as our Fundamental Analyst, scoring the sentiment of live news headlines.
-
-### RAG (Retrieval-Augmented Generation) & Vector Databases
-- **What it is:** An architectural pattern that improves LLM responses by fetching factual data from an external database before generating an answer.
-- **How it works:** We take PDFs (like SEC filings) and turn the text into arrays of numbers called **Embeddings**. We store these in a Vector Database. When FinBERT needs context, we use **Cosine Similarity** to find the math vectors that are closest to the current topic, retrieve the text, and feed it to the LLM.
+### Continuous Learning Pipeline (Auto-Retraining)
+- **What it is:** The process of dynamically updating a trained neural network as new data flows in, preventing "model drift."
+- **Where it's implemented:**
+  - `src/api/server.py` (`/api/bot/continuous_learn` endpoint).
+- **Project Logic:** Markets are non-stationary (they change behavior). Our continuous learning pipeline takes the live prediction errors from the previous day, backpropagates them through the LSTM using the Adam optimizer, and updates the `.h5` weights so the bot is slightly smarter for tomorrow's prediction.
 
 ---
 
-## 5. Software Engineering & MLOps Architecture
+## 3. Natural Language Processing (NLP)
 
-### FastAPI
-- **What it is:** A modern, high-performance web framework for building APIs with Python.
-- **Why we used it:** It uses ASGI (Asynchronous Server Gateway Interface), allowing it to handle hundreds of concurrent requests simultaneously. We used it to wrap our heavy PyTorch models so they can serve predictions over HTTP to the frontend.
+### FinBERT & Transformer Architectures
+- **What it is:** A Large Language Model (LLM) based on Google's BERT architecture, specifically fine-tuned on financial texts, SEC filings, and analyst transcripts.
+- **How it works:** It uses the **Self-Attention Mechanism**, allowing the model to weigh the contextual importance of different words in a sentence regardless of distance (e.g., understanding that "rate cut" is bullish for tech stocks, but "guidance cut" is bearish).
+- **Where it's implemented:**
+  - `src/bot/news_sentiment.py` (`NewsSentimentAnalyzer` class).
+- **Project Logic:** We scrape live RSS news feeds for our specific tickers. The text is tokenized and passed through FinBERT, which returns a softmax probability distribution of Positive, Negative, or Neutral sentiment. We aggregate these into a single numerical "Macro Score."
 
-### Next.js & React
-- **What it is:** A React framework for building fast, SEO-friendly web applications.
-- **Why we used it:** It allows us to build isolated, reusable UI components (like the Scoreboard or the Ledger) that react instantly to state changes.
+---
 
-### Docker & Containerization
-- **What it is:** A platform that packages an application and its dependencies into an isolated "container".
-- **Why we used it:** "It works on my machine" syndrome. By writing Dockerfiles, we guarantee that our PyTorch version, Node.js version, and Python libraries are exactly the same whether we run it on a Windows laptop or an Ubuntu Azure server. 
-- **Docker Compose:** Used to orchestrate multiple containers (Database + Backend + Frontend + Scheduler) on a shared internal network.
+## 4. Software Engineering & MLOps Architecture
 
-### CI/CD & Autonomous Pipelines (Cron)
-- **What it is:** Continuous Integration / Continuous Deployment. In our context, continuous execution.
-- **Why we used it:** We built a custom `scheduler.py` container. Because the AI is supposed to be an autonomous hedge fund, the scheduler acts as a heartbeat, pinging the `/api/bot/run` webhook every day at 4:15 PM without any human intervention.
+### FastAPI & Python Backend
+- **What it is:** A modern, incredibly fast Python web framework.
+- **Where it's implemented:** `src/api/server.py`.
+- **Project Logic:** Our Heavy ML models (PyTorch/Keras/Scikit-learn) live in the Python ecosystem. FastAPI wraps these models and the SQLite database, exposing them as RESTful HTTP endpoints (`GET`, `POST`) so the frontend and cron-jobs can trigger AI inferences on demand.
+
+### SQLite Database & ORM
+- **What it is:** A lightweight, serverless, file-based relational database.
+- **Where it's implemented:** `src/bot/paper_trader.py` (via SQLAlchemy/SQLite).
+- **Project Logic:** The paper-trading bot needs to remember its portfolio, cash balance, historical trades, and past AI predictions. SQLite stores this persistently in a `.db` file, ensuring our bot's ledger survives server restarts.
+
+### Next.js & React (Frontend)
+- **What it is:** A React framework for building blazing-fast, responsive web applications.
+- **Where it's implemented:** The `frontend/` directory.
+- **Project Logic:** React allows us to build isolated UI components (like the Scoreboard, Ledger, and LineChart). We fetch data from the FastAPI backend using `useEffect` and `fetch()`, updating the DOM asynchronously for a seamless user experience.
+
+### Hugging Face Spaces & Vercel (Deployment)
+- **What it is:** Cloud hosting platforms for ML backends and web frontends.
+- **Where it's implemented:** The live URLs (`hf.space` and `vercel.app`).
+- **Project Logic:** 
+  - **Hugging Face:** Hosts our Python FastAPI server, running the heavy deep learning inferences and storing our SQLite database on a persistent virtual machine.
+  - **Vercel:** Hosts our static Next.js frontend, utilizing edge-caching to deliver the UI globally in milliseconds.
+
+### Cron-Jobs (Autonomous Scheduling)
+- **What it is:** Time-based job schedulers that execute scripts automatically at specified intervals.
+- **Where it's implemented:** Externally via `cron-job.org` pinging our `/api/bot/portfolio` endpoint.
+- **Project Logic:** Because Hugging Face free-tier servers spin down when inactive, the Cron job acts as a continuous heartbeat. It pings the server every 3 hours, keeping the RAM active, ensuring the bot never misses a scheduled daily trade, and persisting the SQLite database permanently.

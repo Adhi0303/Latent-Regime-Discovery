@@ -257,17 +257,27 @@ export default function Dashboard() {
             {viewMode === "scoreboard" && "AI Scoreboard"}
           </h1>
           <div className="flex items-center gap-4">
-            <select 
-              className="bg-[#141414] border border-[#27272A] text-white text-sm rounded-md focus:ring-blue-500 focus:border-blue-500 block py-1.5 px-3 outline-none cursor-pointer"
-              value={selectedTicker}
-              onChange={(e) => setSelectedTicker(e.target.value)}
-            >
-              <option value="^GSPC">S&P 500 (^GSPC)</option>
-              <option value="BTC-USD">Bitcoin (BTC-USD)</option>
-              <option value="TSLA">Tesla (TSLA)</option>
-              <option value="NVDA">Nvidia (NVDA)</option>
-              <option value="BRK-B">Berkshire Hathaway (BRK-B)</option>
-            </select>
+            <div className="flex bg-[#141414] border border-[#27272A] rounded-md p-0.5 gap-0.5">
+              {[
+                { id: '^GSPC', label: 'S&P 500' },
+                { id: 'BTC-USD', label: 'BTC' },
+                { id: 'TSLA', label: 'TSLA' },
+                { id: 'NVDA', label: 'NVDA' },
+                { id: 'BRK-B', label: 'BRK.B' }
+              ].map(ticker => (
+                <button
+                  key={ticker.id}
+                  onClick={() => setSelectedTicker(ticker.id)}
+                  className={`px-3 py-1 text-xs font-medium rounded transition-colors ${
+                    selectedTicker === ticker.id 
+                      ? 'bg-[#27272A] text-white shadow-sm' 
+                      : 'text-gray-500 hover:text-gray-300 hover:bg-[#1A1A1A]'
+                  }`}
+                >
+                  {ticker.label}
+                </button>
+              ))}
+            </div>
             <div className="flex items-center gap-2 rounded-md bg-[#141414] px-3 py-1.5 border border-[#27272A]">
               <span className="relative flex h-2 w-2">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>

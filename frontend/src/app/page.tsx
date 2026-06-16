@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { 
-  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceArea, Brush 
+  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceArea 
 } from "recharts";
 import { Activity, TrendingUp, AlertTriangle, ShieldAlert, Cpu, History, Wallet, Briefcase } from "lucide-react";
 
@@ -23,15 +23,16 @@ export default function Dashboard() {
   const [portfolioData, setPortfolioData] = useState<any>(null);
   const [portfolioLoading, setPortfolioLoading] = useState(true);
 
-  // Chart filters
-  const [showBull, setShowBull] = useState(true);
-  const [showBear, setShowBear] = useState(true);
-  const [showSideways, setShowSideways] = useState(true);
-
   const [predictionsData, setPredictionsData] = useState<any>(null);
   const [predictionsLoading, setPredictionsLoading] = useState(true);
 
   const [viewMode, setViewMode] = useState<"dashboard" | "backtest" | "bot" | "scoreboard">("dashboard");
+
+  // Chart interactivity states
+  const [timeFilter, setTimeFilter] = useState<string>("all");
+  const [zoomDomain, setZoomDomain] = useState<{ left: string | null; right: string | null }>({ left: null, right: null });
+  const [zoomRefArea, setZoomRefArea] = useState<{ left: string | null; right: string | null }>({ left: null, right: null });
+  const [showRegimes, setShowRegimes] = useState({ bull: true, bear: true, sideways: true });
 
   const [triggerRun, setTriggerRun] = useState(false);
   const [runningBot, setRunningBot] = useState(false);
@@ -153,28 +154,67 @@ export default function Dashboard() {
     2: "text-rose-400"
   };
 
+  // Filter chart data based on time period and zoom
+  let chartData = [];
+  if (data && data.history) {
+    chartData = [...data.history];
+    
+    // Apply time filter
+    if (timeFilter !== 'all' && chartData.length > 0) {
+      const lastDate = new Date(chartData[chartData.length - 1].date);
+      let cutoffDate = new Date(lastDate);
+      
+      if (timeFilter === '1w') cutoffDate.setDate(cutoffDate.getDate() - 7);
+      else if (timeFilter === '1m') cutoffDate.setMonth(cutoffDate.getMonth() - 1);
+      else if (timeFilter === '6m') cutoffDate.setMonth(cutoffDate.getMonth() - 6);
+      else if (timeFilter === '1y') cutoffDate.setFullYear(cutoffDate.getFullYear() - 1);
+      
+      chartData = chartData.filter(d => new Date(d.date) >= cutoffDate);
+    }
+
+    // Apply zoom filter
+    if (zoomDomain.left && zoomDomain.right) {
+      const leftDate = new Date(zoomDomain.left);
+      const rightDate = new Date(zoomDomain.right);
+      const start = leftDate < rightDate ? leftDate : rightDate;
+      const end = leftDate < rightDate ? rightDate : leftDate;
+      chartData = chartData.filter(d => {
+        const dDate = new Date(d.date);
+        return dDate >= start && dDate <= end;
+      });
+    }
+  }
+
+  // Calculate regime blocks for the filtered data
   const blocks = [];
-  if (data.history && data.history.length > 0) {
-    let currentRegime = data.history[0].regime;
+  if (chartData.length > 0) {
+    let currentRegime = chartData[0].regime;
     let startIdx = 0;
 
-    for (let i = 1; i < data.history.length; i++) {
-      if (data.history[i].regime !== currentRegime) {
+    for (let i = 1; i < chartData.length; i++) {
+      if (chartData[i].regime !== currentRegime) {
         blocks.push({
-          start: data.history[startIdx].date,
-          end: data.history[i - 1].date,
+          start: chartData[startIdx].date,
+          end: chartData[i - 1].date,
           regime: currentRegime
         });
-        currentRegime = data.history[i].regime;
+        currentRegime = chartData[i].regime;
         startIdx = i;
       }
     }
     blocks.push({
-      start: data.history[startIdx].date,
-      end: data.history[data.history.length - 1].date,
+      start: chartData[startIdx].date,
+      end: chartData[chartData.length - 1].date,
       regime: currentRegime
     });
   }
+
+  // Helper for regime names mapping
+  const regimeNameMap: Record<number, string> = {
+    0: "bull",
+    1: "sideways",
+    2: "bear"
+  };
 
   const currentRegime = data.current_regime;
 
@@ -379,33 +419,69 @@ export default function Dashboard() {
 
           {/* Chart Section */}
           <div className="rounded-2xl bg-[#18181B] border border-white/5 p-6 shadow-xl">
-            <div className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="mb-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
               <div>
                 <h3 className="text-lg font-bold text-white">Historical Regime Map</h3>
-                <p className="text-sm text-gray-500">{data.ticker} Price overlaid with AI-detected hidden states. Zoom by selecting an area on the mini-chart below.</p>
+                <p className="text-sm text-gray-500">{data.ticker} Price overlaid with AI-detected hidden states.</p>
               </div>
-              
-              {/* Regime Filter Toggles */}
-              <div className="flex items-center gap-3 bg-[#27272A]/50 p-2 rounded-lg border border-white/5">
-                <span className="text-xs text-gray-400 mr-2 uppercase tracking-wider font-semibold">Overlays:</span>
-                <label className="flex items-center gap-2 cursor-pointer text-sm">
-                  <input type="checkbox" checked={showBull} onChange={(e) => setShowBull(e.target.checked)} className="rounded bg-gray-800 border-gray-700 text-emerald-500 focus:ring-emerald-500" />
-                  <span className="text-emerald-500 font-medium">Bull</span>
-                </label>
-                <label className="flex items-center gap-2 cursor-pointer text-sm">
-                  <input type="checkbox" checked={showBear} onChange={(e) => setShowBear(e.target.checked)} className="rounded bg-gray-800 border-gray-700 text-rose-500 focus:ring-rose-500" />
-                  <span className="text-rose-500 font-medium">Bear</span>
-                </label>
-                <label className="flex items-center gap-2 cursor-pointer text-sm">
-                  <input type="checkbox" checked={showSideways} onChange={(e) => setShowSideways(e.target.checked)} className="rounded bg-gray-800 border-gray-700 text-amber-500 focus:ring-amber-500" />
-                  <span className="text-amber-500 font-medium">Sideways</span>
-                </label>
+
+              <div className="flex flex-col gap-3">
+                {/* Timeframe Filters */}
+                <div className="flex items-center gap-2 bg-[#27272A]/50 p-1 rounded-lg border border-white/5 self-end">
+                  {['1w', '1m', '6m', '1y', 'all'].map((tf) => (
+                    <button
+                      key={tf}
+                      onClick={() => { setTimeFilter(tf); setZoomDomain({left: null, right: null}); }}
+                      className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${timeFilter === tf ? 'bg-[#3F3F46] text-white' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}
+                    >
+                      {tf.toUpperCase()}
+                    </button>
+                  ))}
+                  {(zoomDomain.left || zoomDomain.right) && (
+                    <button
+                      onClick={() => setZoomDomain({ left: null, right: null })}
+                      className="px-3 py-1 text-xs font-medium rounded-md bg-blue-500/20 text-blue-400 hover:bg-blue-500/30 transition-colors ml-1"
+                    >
+                      Reset Zoom
+                    </button>
+                  )}
+                </div>
+
+                {/* Regime Visibility Toggles */}
+                <div className="flex items-center gap-2 self-end">
+                  <span className="text-xs text-gray-500 mr-1">Layers:</span>
+                  {[
+                    { id: 'bull', label: 'Bull', color: 'bg-emerald-500' },
+                    { id: 'sideways', label: 'Sideways', color: 'bg-amber-500' },
+                    { id: 'bear', label: 'Bear', color: 'bg-rose-500' }
+                  ].map((r) => (
+                    <button
+                      key={r.id}
+                      onClick={() => setShowRegimes(prev => ({ ...prev, [r.id]: !prev[r.id as keyof typeof showRegimes] }))}
+                      className={`flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium transition-colors border ${showRegimes[r.id as keyof typeof showRegimes] ? 'bg-[#27272A] border-white/10 text-gray-300' : 'bg-transparent border-transparent text-gray-600'}`}
+                    >
+                      <div className={`w-2 h-2 rounded-full ${showRegimes[r.id as keyof typeof showRegimes] ? r.color : 'bg-gray-600'}`}></div>
+                      {r.label}
+                    </button>
+                  ))}
+                </div>
               </div>
             </div>
             
-            <div className="h-[500px] w-full">
+            <div className="h-[500px] w-full select-none">
               <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={data.history} margin={{ top: 10, right: 10, left: 10, bottom: 0 }}>
+                <LineChart 
+                  data={chartData} 
+                  margin={{ top: 10, right: 10, left: 10, bottom: 0 }}
+                  onMouseDown={(e) => e && setZoomRefArea({ ...zoomRefArea, left: e.activeLabel || null })}
+                  onMouseMove={(e) => e && zoomRefArea.left && setZoomRefArea({ ...zoomRefArea, right: e.activeLabel || null })}
+                  onMouseUp={() => {
+                    if (zoomRefArea.left && zoomRefArea.right && zoomRefArea.left !== zoomRefArea.right) {
+                      setZoomDomain({ left: zoomRefArea.left, right: zoomRefArea.right });
+                    }
+                    setZoomRefArea({ left: null, right: null });
+                  }}
+                >
                   <CartesianGrid strokeDasharray="3 3" stroke="#27272A" vertical={false} />
                   <XAxis 
                     dataKey="date" 
@@ -429,22 +505,26 @@ export default function Dashboard() {
                     formatter={(value: any) => [`$${Number(value).toFixed(2)}`, 'Price']}
                   />
                   
-                  {/* Draw Regime Backgrounds */}
-                  {blocks.filter(b => {
-                    if (b.regime === 'Bull' && !showBull) return false;
-                    if (b.regime === 'Bear' && !showBear) return false;
-                    if (b.regime === 'Sideways' && !showSideways) return false;
-                    return true;
-                  }).map((b, idx) => (
-                    <ReferenceArea 
-                      key={idx} 
-                      x1={b.start} 
-                      x2={b.end} 
-                      fill={regimeColors[b.regime]} 
-                      fillOpacity={1}
-                      strokeOpacity={0}
-                    />
-                  ))}
+                  {/* Draw Regime Backgrounds if toggled ON */}
+                  {blocks.map((b, idx) => {
+                    const regimeName = regimeNameMap[b.regime] as keyof typeof showRegimes;
+                    if (!showRegimes[regimeName]) return null;
+                    return (
+                      <ReferenceArea 
+                        key={idx} 
+                        x1={b.start} 
+                        x2={b.end} 
+                        fill={regimeColors[b.regime]} 
+                        fillOpacity={1}
+                        strokeOpacity={0}
+                      />
+                    );
+                  })}
+
+                  {/* Zoom Drag Area */}
+                  {zoomRefArea.left && zoomRefArea.right ? (
+                    <ReferenceArea x1={zoomRefArea.left} x2={zoomRefArea.right} strokeOpacity={0.3} fill="#FFFFFF" fillOpacity={0.1} />
+                  ) : null}
 
                   <Line 
                     type="monotone" 
@@ -453,15 +533,7 @@ export default function Dashboard() {
                     strokeWidth={1.5}
                     dot={false}
                     activeDot={{ r: 6, fill: "#60A5FA", stroke: "#27272A", strokeWidth: 2 }}
-                  />
-                  
-                  {/* Zoom Brush */}
-                  <Brush 
-                    dataKey="date" 
-                    height={30} 
-                    stroke="#3F3F46" 
-                    fill="#18181B" 
-                    tickFormatter={() => ''} 
+                    isAnimationActive={false}
                   />
                 </LineChart>
               </ResponsiveContainer>

@@ -761,15 +761,16 @@ export default function Dashboard() {
                            </thead>
                            <tbody className="divide-y divide-white/5">
                              {[...predictionsData.predictions].reverse().map((p: any, idx: number) => {
-                                const diff = p.actual_close - p.predicted_close;
-                                const diffPct = (diff / p.actual_close) * 100;
+                                const hasActual = p.actual_close !== null && p.actual_close !== undefined;
+                                const diff = hasActual ? p.actual_close - p.predicted_close : 0;
+                                const diffPct = hasActual ? (diff / p.actual_close) * 100 : 0;
                                 return (
                                  <tr key={idx} className="hover:bg-[#27272A]/20 transition-colors">
                                    <td className="px-3 py-2 text-gray-300 font-mono text-[10px] whitespace-nowrap">{p.timestamp.split(' ')[0]}</td>
                                    <td className="px-3 py-2 text-rose-400 font-medium">${p.predicted_close.toFixed(2)}</td>
-                                   <td className="px-3 py-2 text-white font-medium">${p.actual_close.toFixed(2)}</td>
-                                   <td className={`px-3 py-2 font-bold text-right ${Math.abs(diffPct) < 2 ? 'text-emerald-400' : 'text-rose-400'}`}>
-                                      {diffPct > 0 ? '+' : ''}{diffPct.toFixed(2)}%
+                                   <td className="px-3 py-2 text-white font-medium">{hasActual ? `$${p.actual_close.toFixed(2)}` : 'Pending'}</td>
+                                   <td className={`px-3 py-2 font-bold text-right ${!hasActual ? 'text-gray-500' : Math.abs(diffPct) < 2 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                                      {!hasActual ? '-' : `${diffPct > 0 ? '+' : ''}${diffPct.toFixed(2)}%`}
                                    </td>
                                  </tr>
                                 )

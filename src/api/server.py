@@ -355,9 +355,10 @@ def get_bot_predictions(ticker: str = "^GSPC"):
     cursor = conn.cursor()
     cursor.execute('''
         SELECT timestamp, predicted_close, actual_close, error_pct 
-        FROM predictions WHERE ticker = ? ORDER BY timestamp ASC
+        FROM predictions WHERE ticker = ? ORDER BY timestamp DESC LIMIT 7
     ''', (ticker,))
     rows = cursor.fetchall()
+    rows.reverse()  # Reverse back to chronological order
     conn.close()
     
     predictions = []

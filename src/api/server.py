@@ -415,7 +415,7 @@ def get_sentiment(ticker: str = "^GSPC"):
     Fetches the latest news for the ticker and scores it using FinBERT.
     """
     try:
-        news = fetch_recent_news(ticker, limit=5)
+        news = fetch_recent_news(ticker, limit=10)
         analyst = get_sentiment_analyst()
         macro_score, scored_news = analyst.analyze_headlines(news)
         
@@ -522,7 +522,7 @@ def get_forecast(ticker: str = "^GSPC"):
         
         # 3. Ensemble Adjustment via RAG Sentiment
         # Get live sentiment score
-        news = fetch_recent_news(ticker, limit=5)
+        news = fetch_recent_news(ticker, limit=10)
         analyst = get_sentiment_analyst()
         macro_score, _ = analyst.analyze_headlines(news)
         

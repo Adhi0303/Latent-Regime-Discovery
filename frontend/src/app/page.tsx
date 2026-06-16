@@ -37,6 +37,39 @@ export default function Dashboard() {
   const [triggerRun, setTriggerRun] = useState(false);
   const [runningBot, setRunningBot] = useState(false);
 
+  const [nyTimeStr, setNyTimeStr] = useState<string>("");
+  const [marketOpen, setMarketOpen] = useState<boolean>(false);
+
+  useEffect(() => {
+    const updateClock = () => {
+      const options: Intl.DateTimeFormatOptions = {
+        timeZone: "America/New_York",
+        hour: "numeric",
+        minute: "2-digit",
+        second: "2-digit",
+        hour12: true,
+      };
+      const formatter = new Intl.DateTimeFormat("en-US", options);
+      setNyTimeStr(formatter.format(new Date()));
+
+      // NY time for market open check
+      const nyDateString = new Date().toLocaleString("en-US", { timeZone: "America/New_York" });
+      const nyDate = new Date(nyDateString);
+      const day = nyDate.getDay();
+      const hours = nyDate.getHours();
+      const minutes = nyDate.getMinutes();
+      const timeInMinutes = hours * 60 + minutes;
+      
+      // Market open: Mon-Fri (1-5), 9:30 AM (570) to 4:00 PM (960)
+      const isOpen = day >= 1 && day <= 5 && timeInMinutes >= 570 && timeInMinutes < 960;
+      setMarketOpen(isOpen);
+    };
+
+    updateClock();
+    const timer = setInterval(updateClock, 1000);
+    return () => clearInterval(timer);
+  }, []);
+
   useEffect(() => {
     const encodedTicker = encodeURIComponent(selectedTicker);
     setLoading(true);
@@ -221,8 +254,8 @@ export default function Dashboard() {
   return (
     <div className="flex h-screen bg-[#0A0A0B] text-[#e0e0e0] font-sans selection:bg-blue-500/30 overflow-hidden">
       {/* Sidebar */}
-      <aside className="w-64 border-r border-[#27272A] bg-[#0A0A0B] flex flex-col shrink-0">
-        <div className="h-16 flex items-center px-6 border-b border-[#27272A]">
+      <aside className="w-52 border-r border-[#27272A] bg-[#0A0A0B] flex flex-col shrink-0">
+        <div className="p-4 border-b border-[#27272A] flex items-center gap-2 shrink-0">
           <div className="flex items-center gap-2">
             <Cpu className="w-5 h-5 text-blue-500" />
             <span className="font-bold text-sm tracking-wide text-white">Latent Discovery</span>
@@ -278,12 +311,25 @@ export default function Dashboard() {
                 </button>
               ))}
             </div>
-            <div className="flex items-center gap-2 rounded-md bg-[#141414] px-3 py-1.5 border border-[#27272A]">
-              <span className="relative flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-500"></span>
-              </span>
-              <span className="text-xs font-medium text-gray-300">Live API Connection</span>
+            
+            <div className="flex items-center gap-3">
+              <div className="flex flex-col items-end">
+                <span className="text-[10px] text-gray-500 uppercase tracking-wider font-semibold">Wall Street Time</span>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-mono font-medium text-gray-200">{nyTimeStr || "..."}</span>
+                  <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${marketOpen ? 'bg-emerald-400/10 text-emerald-400 border border-emerald-400/20' : 'bg-rose-400/10 text-rose-400 border border-rose-400/20'}`}>
+                    {marketOpen ? 'OPEN' : 'CLOSED'}
+                  </span>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2 rounded-md bg-[#141414] px-3 py-2 border border-[#27272A] h-full">
+                <span className="relative flex h-2 w-2">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-500"></span>
+                </span>
+                <span className="text-xs font-medium text-gray-300">Live API</span>
+              </div>
             </div>
           </div>
         </header>

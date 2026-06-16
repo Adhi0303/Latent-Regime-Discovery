@@ -1,5 +1,6 @@
 import requests
 import xml.etree.ElementTree as ET
+from urllib.parse import urlparse
 
 # Ticker mapping: some tickers need aliases for better news coverage
 TICKER_ALIAS = {
@@ -52,9 +53,21 @@ def fetch_recent_news(ticker: str, limit: int = 5) -> list:
     for item in items[:limit]:
         title = item.findtext('title', '').strip()
         summary = item.findtext('description', '').strip()
-        publisher = item.findtext('source', 'Yahoo Finance').strip()
         pub_date = item.findtext('pubDate', '').strip()
         link = item.findtext('link', '').strip()
+        
+        # Determine real publisher from URL
+        publisher = item.findtext('source', '').strip()
+        if not publisher and link:
+            try:
+                domain = urlparse(link).netloc
+                if domain:
+                    publisher = domain.replace('www.', '')
+            except:
+                pass
+        
+        if not publisher:
+            publisher = 'Yahoo Finance'
 
         if not title:
             continue
@@ -96,9 +109,21 @@ def _fallback_google_news(ticker: str, limit: int = 5) -> list:
     for item in items[:limit]:
         title = item.findtext('title', '').strip()
         summary = item.findtext('description', title).strip()
-        publisher = item.findtext('source', 'Google News').strip()
         pub_date = item.findtext('pubDate', '').strip()
         link = item.findtext('link', '').strip()
+        
+        # Determine real publisher from URL
+        publisher = item.findtext('source', '').strip()
+        if not publisher and link:
+            try:
+                domain = urlparse(link).netloc
+                if domain:
+                    publisher = domain.replace('www.', '')
+            except:
+                pass
+        
+        if not publisher:
+            publisher = 'Google News'
 
         if not title:
             continue

@@ -40,6 +40,50 @@ export default function Dashboard() {
   const [nyTimeStr, setNyTimeStr] = useState<string>("");
   const [marketOpen, setMarketOpen] = useState<boolean>(false);
 
+  const handleWheelZoom = (e: React.WheelEvent) => {
+    // Only apply for dashboard chart data
+    if (viewMode !== "dashboard" || !data || !data.chart || data.chart.length === 0) return;
+    
+    const chartData = data.chart;
+    let startIndex = 0;
+    let endIndex = chartData.length - 1;
+    
+    if (zoomDomain.left && zoomDomain.right) {
+      const leftIdx = chartData.findIndex((d: any) => d.date === zoomDomain.left);
+      const rightIdx = chartData.findIndex((d: any) => d.date === zoomDomain.right);
+      if (leftIdx !== -1 && rightIdx !== -1) {
+        startIndex = Math.min(leftIdx, rightIdx);
+        endIndex = Math.max(leftIdx, rightIdx);
+      }
+    }
+    
+    const range = endIndex - startIndex;
+    if (e.deltaY < 0 && range < 10) return; // Prevent zooming in too close
+    
+    const zoomFactor = 0.1;
+    const delta = Math.max(1, Math.floor(range * zoomFactor));
+    
+    if (e.deltaY < 0) {
+      startIndex += delta;
+      endIndex -= delta;
+    } else {
+      startIndex -= delta;
+      endIndex += delta;
+    }
+    
+    startIndex = Math.max(0, startIndex);
+    endIndex = Math.min(chartData.length - 1, endIndex);
+    
+    if (startIndex < endIndex) {
+      // If we zoomed all the way out, reset domain
+      if (startIndex === 0 && endIndex === chartData.length - 1) {
+        setZoomDomain({ left: null, right: null });
+      } else {
+        setZoomDomain({ left: chartData[startIndex].date, right: chartData[endIndex].date });
+      }
+    }
+  };
+
   useEffect(() => {
     const updateClock = () => {
       const options: Intl.DateTimeFormatOptions = {
@@ -283,7 +327,7 @@ export default function Dashboard() {
       <main className="flex-1 flex flex-col overflow-hidden bg-[#0A0A0B]">
         {/* Top Header */}
         <header className="h-16 border-b border-[#27272A] flex items-center justify-between px-8 shrink-0 bg-[#0A0A0B] relative">
-          <h1 className="text-lg font-semibold text-white w-1/3">
+          <h1 className="text-lg font-semibold text-white flex-1">
             {viewMode === "dashboard" && "Live Dashboard"}
             {viewMode === "backtest" && "Strategy Simulator"}
             {viewMode === "bot" && "Multi-Asset Portfolio Bot"}
@@ -300,7 +344,7 @@ export default function Dashboard() {
             </div>
           </div>
 
-          <div className="flex items-center gap-4 w-1/3 justify-end">
+          <div className="flex items-center gap-4 flex-1 justify-end">
             <div className="flex bg-[#141414] border border-[#27272A] rounded-md p-0.5 gap-0.5">
               {[
                 { id: '^GSPC', label: 'S&P 500' },
@@ -416,7 +460,7 @@ export default function Dashboard() {
                     </div>
                   </div>
                   
-                  <div className="flex-1 w-full min-h-0 relative select-none">
+                  <div className="flex-1 w-full min-h-0 relative select-none" onWheel={handleWheelZoom}>
                     <ResponsiveContainer width="100%" height="100%">
                       <LineChart 
                         data={chartData} 

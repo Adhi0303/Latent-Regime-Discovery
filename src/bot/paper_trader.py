@@ -41,24 +41,22 @@ def run_multi_asset_cycle():
             continue
             
         try:
-            raw_df = yf.download(ticker, period="6mo", session=yf_session)
-            if raw_df is None or raw_df.empty:
-                raise ValueError(f"Yahoo Finance returned empty data for {ticker}.")
-            if isinstance(raw_df.columns, pd.MultiIndex):
-                raw_df.columns = raw_df.columns.get_level_values(0)
-            
-            features_df = engineer_features_df(raw_df.copy())
-        except Exception as fallback_e:
-            print(f"Failed to fetch live data for {ticker} in paper_trader: {fallback_e}. Falling back to CSV.")
-            features_path = os.path.join(models_dir, "features.csv")
-            if not os.path.exists(features_path):
-                print(f"Error processing {ticker}: No live data and no cached features.csv found.")
-                continue
-            features_df = pd.read_csv(features_path, index_col='Date', parse_dates=True)
-            features_df.ffill(inplace=True)
-            features_df.fillna(0, inplace=True)
-            
-        try:
+            features_df = None
+            try:
+                raw_df = yf.download(ticker, period="6mo", session=yf_session)
+                if isinstance(raw_df.columns, pd.MultiIndex):
+                    raw_df.columns = raw_df.columns.get_level_values(0)
+                if not raw_df.empty:
+                    features_df = engineer_features_df(raw_df.copy())
+            except Exception as yf_err:
+                print(f"yfinance fetch failed for {ticker}: {yf_err}")
+
+            if features_df is None or features_df.empty:
+                features_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', 'data', safe_ticker, 'features.csv'))
+                print(f"Falling back to cached CSV for {ticker}")
+                features_df = pd.read_csv(features_path, index_col='Date', parse_dates=True)
+                features_df.ffill(inplace=True)
+                features_df.fillna(0, inplace=True)
             today_close = float(features_df['Close'].iloc[-1])
             current_prices[ticker] = today_close
             
@@ -110,9 +108,7 @@ def run_multi_asset_cycle():
             log_prediction(ticker, predicted_close)
             
         except Exception as e:
-            import traceback
             print(f"Error processing {ticker}: {e}")
-            traceback.print_exc()
             
             
     # --- 2. SELL FIRST (Risk Management) ---

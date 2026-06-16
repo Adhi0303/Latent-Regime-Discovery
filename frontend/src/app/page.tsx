@@ -193,10 +193,44 @@ export default function Dashboard() {
 
   if (loading) {
     return (
-      <div className="flex h-screen items-center justify-center bg-[#121212] text-white">
-        <div className="flex flex-col items-center gap-4">
-          <Activity className="h-10 w-10 animate-pulse text-blue-500" />
-          <p className="text-xl font-medium tracking-wide">Connecting to Quantum HMM Engine...</p>
+      <div className="flex h-screen items-center justify-center bg-[#0A0A0B] text-white overflow-hidden relative">
+        {/* Background ambient glow */}
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-blue-500/10 blur-[100px] rounded-full pointer-events-none"></div>
+        
+        <div className="flex flex-col items-center gap-10 relative z-10">
+          {/* Animated Trading Chart / Candlesticks */}
+          <div className="flex items-end gap-4 h-24">
+            <div className="w-3 bg-emerald-500 rounded-t-sm rounded-b-sm animate-pulse h-12 relative shadow-[0_0_15px_rgba(16,185,129,0.5)]">
+               <div className="absolute -top-4 -bottom-4 left-1/2 -translate-x-1/2 w-[1px] bg-emerald-500/50"></div>
+            </div>
+            <div className="w-3 bg-rose-500 rounded-t-sm rounded-b-sm animate-pulse h-20 delay-75 relative shadow-[0_0_15px_rgba(244,63,94,0.5)]">
+               <div className="absolute -top-3 -bottom-6 left-1/2 -translate-x-1/2 w-[1px] bg-rose-500/50"></div>
+            </div>
+            <div className="w-3 bg-emerald-500 rounded-t-sm rounded-b-sm animate-pulse h-8 delay-150 relative shadow-[0_0_15px_rgba(16,185,129,0.5)]">
+               <div className="absolute -top-6 -bottom-2 left-1/2 -translate-x-1/2 w-[1px] bg-emerald-500/50"></div>
+            </div>
+            <div className="w-3 bg-blue-500 rounded-t-sm rounded-b-sm animate-pulse h-24 delay-300 relative shadow-[0_0_15px_rgba(59,130,246,0.5)]">
+               <div className="absolute -top-2 -bottom-2 left-1/2 -translate-x-1/2 w-[1px] bg-blue-500/50"></div>
+            </div>
+            <div className="w-3 bg-emerald-500 rounded-t-sm rounded-b-sm animate-pulse h-16 delay-200 relative shadow-[0_0_15px_rgba(16,185,129,0.5)]">
+               <div className="absolute -top-5 -bottom-3 left-1/2 -translate-x-1/2 w-[1px] bg-emerald-500/50"></div>
+            </div>
+          </div>
+          
+          {/* Branding & Status */}
+          <div className="flex flex-col items-center gap-3">
+            <div className="flex items-center gap-2">
+              <Cpu className="w-5 h-5 text-blue-500 animate-bounce" />
+              <p className="text-sm font-bold tracking-[0.2em] uppercase text-gray-200">Latent Discovery AI</p>
+            </div>
+            <div className="flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#141414] border border-[#27272A]">
+               <span className="relative flex h-2 w-2">
+                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
+                 <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-500"></span>
+               </span>
+               <p className="text-xs text-gray-400 font-mono tracking-wide">Syncing Live Market Models...</p>
+            </div>
+          </div>
         </div>
       </div>
     );

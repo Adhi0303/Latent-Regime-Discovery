@@ -723,57 +723,121 @@ export default function Dashboard() {
                  <p className="text-sm">Fetching prediction history...</p>
                </div>
            ) : predictionsData && predictionsData.predictions && predictionsData.predictions.length > 0 ? (
-             <div className="flex-1 flex flex-col rounded-xl bg-[#141414] border border-[#27272A] p-4 shadow-sm min-h-0">
-               <div className="flex-1 w-full min-h-0">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <LineChart data={predictionsData.predictions} margin={{ top: 10, right: 10, left: 5, bottom: 0 }}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#27272A" vertical={false} />
-                      <XAxis 
-                        dataKey="timestamp" 
-                        stroke="#71717A" 
-                        tick={{fill: '#71717A', fontSize: 10}}
-                        tickMargin={8}
-                        minTickGap={30}
-                      />
-                      <YAxis 
-                        domain={['auto', 'auto']} 
-                        stroke="#71717A" 
-                        tick={{fill: '#71717A', fontSize: 10}}
-                        tickFormatter={(val) => `$${val.toFixed(0)}`}
-                        axisLine={false}
-                        tickLine={false}
-                      />
-                      <Tooltip 
-                        contentStyle={{ backgroundColor: '#27272A', borderColor: '#3F3F46', borderRadius: '8px', color: '#fff', fontSize: '12px' }}
-                        itemStyle={{ color: '#fff' }}
-                        labelStyle={{ color: '#A1A1AA', marginBottom: '4px' }}
-                        formatter={(value: any, name: any) => {
-                          const numValue = Number(value);
-                          if (name === 'predicted_close') return [`$${numValue.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`, 'AI Prediction'];
-                          if (name === 'actual_close') return [`$${numValue.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`, 'Actual Price'];
-                          return [value, name];
-                        }}
-                      />
-                      
-                      <Line 
-                        type="monotone" 
-                        dataKey="actual_close" 
-                        stroke="#FFFFFF" 
-                        strokeWidth={2}
-                        dot={{ r: 3 }}
-                        activeDot={{ r: 5 }}
-                      />
-                      <Line 
-                        type="monotone" 
-                        dataKey="predicted_close" 
-                        stroke="#F43F5E" 
-                        strokeDasharray="5 5"
-                        strokeWidth={2}
-                        dot={{ r: 3 }}
-                        activeDot={{ r: 5 }}
-                      />
-                    </LineChart>
-                  </ResponsiveContainer>
+             <div className="flex-1 flex gap-4 min-h-0">
+                {/* Left side: Stats & Recent Log */}
+                <div className="flex-[0.8] flex flex-col gap-4 min-w-0">
+                   {/* Mini Stats Card */}
+                   <div className="bg-[#141414] border border-[#27272A] rounded-xl p-4 shadow-sm shrink-0 flex items-center justify-between relative overflow-hidden">
+                      <div className="absolute top-0 right-0 w-20 h-20 bg-rose-500/10 rounded-full blur-2xl -mr-6 -mt-6"></div>
+                      <div>
+                        <p className="text-xs text-gray-400">Total Predictions</p>
+                        <p className="text-2xl font-bold text-white mt-0.5">{predictionsData.predictions.length}</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-xs text-gray-400">Tracking Status</p>
+                        <p className="text-sm font-bold text-emerald-400 mt-0.5 flex items-center justify-end gap-1">
+                          <span className="relative flex h-2 w-2">
+                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                            <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                          </span> Active
+                        </p>
+                      </div>
+                   </div>
+
+                   {/* Recent Log Table */}
+                   <div className="flex-1 flex flex-col bg-[#141414] border border-[#27272A] rounded-xl shadow-sm overflow-hidden min-h-0">
+                      <div className="px-4 py-3 border-b border-[#27272A] bg-[#0A0A0B] shrink-0">
+                        <h3 className="text-sm font-bold text-white">Prediction Ledger</h3>
+                      </div>
+                      <div className="flex-1 overflow-y-auto">
+                        <table className="w-full text-left text-xs">
+                           <thead className="bg-[#141414] text-gray-400 sticky top-0 border-b border-[#27272A] z-10">
+                             <tr>
+                               <th className="px-3 py-2 font-medium">Date</th>
+                               <th className="px-3 py-2 font-medium text-rose-400/80">Predicted</th>
+                               <th className="px-3 py-2 font-medium text-white/80">Actual</th>
+                               <th className="px-3 py-2 font-medium text-right">Error %</th>
+                             </tr>
+                           </thead>
+                           <tbody className="divide-y divide-white/5">
+                             {[...predictionsData.predictions].reverse().map((p: any, idx: number) => {
+                                const diff = p.actual_close - p.predicted_close;
+                                const diffPct = (diff / p.actual_close) * 100;
+                                return (
+                                 <tr key={idx} className="hover:bg-[#27272A]/20 transition-colors">
+                                   <td className="px-3 py-2 text-gray-300 font-mono text-[10px] whitespace-nowrap">{p.timestamp.split(' ')[0]}</td>
+                                   <td className="px-3 py-2 text-rose-400 font-medium">${p.predicted_close.toFixed(2)}</td>
+                                   <td className="px-3 py-2 text-white font-medium">${p.actual_close.toFixed(2)}</td>
+                                   <td className={`px-3 py-2 font-bold text-right ${Math.abs(diffPct) < 2 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                                      {diffPct > 0 ? '+' : ''}{diffPct.toFixed(2)}%
+                                   </td>
+                                 </tr>
+                                )
+                             })}
+                           </tbody>
+                        </table>
+                      </div>
+                   </div>
+                </div>
+
+                {/* Right side: Chart */}
+                <div className="flex-[2] flex flex-col rounded-xl bg-[#141414] border border-[#27272A] p-4 shadow-sm min-h-0 relative overflow-hidden">
+                   <div className="absolute bottom-0 left-0 w-full h-32 bg-gradient-to-t from-rose-500/5 to-transparent pointer-events-none"></div>
+                   <div className="mb-2 shrink-0">
+                      <h3 className="text-sm font-bold text-white">Prediction vs Reality Trend ($)</h3>
+                   </div>
+                   <div className="flex-1 w-full min-h-0">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <LineChart data={predictionsData.predictions} margin={{ top: 10, right: 10, left: 5, bottom: 0 }}>
+                          <CartesianGrid strokeDasharray="3 3" stroke="#27272A" vertical={false} />
+                          <XAxis 
+                            dataKey="timestamp" 
+                            stroke="#71717A" 
+                            tick={{fill: '#71717A', fontSize: 10}}
+                            tickMargin={8}
+                            minTickGap={30}
+                            tickFormatter={(val) => val.split(' ')[0]}
+                          />
+                          <YAxis 
+                            domain={['auto', 'auto']} 
+                            stroke="#71717A" 
+                            tick={{fill: '#71717A', fontSize: 10}}
+                            tickFormatter={(val) => `$${val.toFixed(0)}`}
+                            axisLine={false}
+                            tickLine={false}
+                          />
+                          <Tooltip 
+                            contentStyle={{ backgroundColor: '#27272A', borderColor: '#3F3F46', borderRadius: '8px', color: '#fff', fontSize: '12px' }}
+                            itemStyle={{ color: '#fff' }}
+                            labelStyle={{ color: '#A1A1AA', marginBottom: '4px' }}
+                            formatter={(value: any, name: any) => {
+                              const numValue = Number(value);
+                              if (name === 'predicted_close') return [`$${numValue.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`, 'AI Prediction'];
+                              if (name === 'actual_close') return [`$${numValue.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`, 'Actual Price'];
+                              return [value, name];
+                            }}
+                          />
+                          
+                          <Line 
+                            type="monotone" 
+                            dataKey="actual_close" 
+                            stroke="#FFFFFF" 
+                            strokeWidth={2}
+                            dot={{ r: 3 }}
+                            activeDot={{ r: 5 }}
+                          />
+                          <Line 
+                            type="monotone" 
+                            dataKey="predicted_close" 
+                            stroke="#F43F5E" 
+                            strokeDasharray="5 5"
+                            strokeWidth={2}
+                            dot={{ r: 3 }}
+                            activeDot={{ r: 5 }}
+                          />
+                        </LineChart>
+                      </ResponsiveContainer>
+                   </div>
                 </div>
              </div>
            ) : (

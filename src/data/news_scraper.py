@@ -1,4 +1,10 @@
 import yfinance as yf
+import requests
+
+yf_session = requests.Session()
+yf_session.headers.update({
+    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36'
+})
 
 def fetch_recent_news(ticker: str, limit: int = 5):
     """
@@ -9,7 +15,7 @@ def fetch_recent_news(ticker: str, limit: int = 5):
         # S&P 500 ^GSPC doesn't always have great direct news, use SPY instead for news
         query_ticker = "SPY" if ticker == "^GSPC" else ticker
             
-        ticker_obj = yf.Ticker(query_ticker)
+        ticker_obj = yf.Ticker(query_ticker, session=yf_session)
         news_items = ticker_obj.news
         results = []
         

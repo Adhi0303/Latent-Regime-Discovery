@@ -10,7 +10,13 @@ from pydantic import BaseModel
 from typing import List, Dict, Any
 import asyncio
 import schedule
+import requests
 from contextlib import asynccontextmanager
+
+yf_session = requests.Session()
+yf_session.headers.update({
+    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36'
+})
 
 # Add project root to sys.path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
@@ -96,7 +102,7 @@ def predict_regime(ticker: str = "^GSPC", period: str = "5y"):
     
     # 1. Fetch Data
     try:
-        raw_df = yf.download(ticker, period=period)
+        raw_df = yf.download(ticker, period=period, session=yf_session)
         if isinstance(raw_df.columns, pd.MultiIndex):
             raw_df.columns = raw_df.columns.get_level_values(0)
     except Exception as e:
@@ -412,7 +418,7 @@ def get_forecast(ticker: str = "^GSPC"):
     try:
         # 1. We need the last 21 days of features
         # Re-use the data fetching and HMM prediction logic to build the 21-day sequence
-        raw_df = yf.download(ticker, period="6mo") # Get enough buffer for 252d drawdown if needed, or rely on available data
+        raw_df = yf.download(ticker, period="6mo", session=yf_session) # Get enough buffer for 252d drawdown if needed, or rely on available data
         if isinstance(raw_df.columns, pd.MultiIndex):
             raw_df.columns = raw_df.columns.get_level_values(0)
             

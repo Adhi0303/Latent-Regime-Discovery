@@ -3,6 +3,13 @@ import sys
 import pandas as pd
 import numpy as np
 import yfinance as yf
+import requests
+
+yf_session = requests.Session()
+yf_session.headers.update({
+    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36'
+})
+
 import torch
 import joblib
 
@@ -34,7 +41,7 @@ def run_multi_asset_cycle():
             continue
             
         try:
-            raw_df = yf.download(ticker, period="6mo")
+            raw_df = yf.download(ticker, period="6mo", session=yf_session)
             if isinstance(raw_df.columns, pd.MultiIndex):
                 raw_df.columns = raw_df.columns.get_level_values(0)
             

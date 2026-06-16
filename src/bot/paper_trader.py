@@ -43,7 +43,8 @@ def run_multi_asset_cycle():
         try:
             features_df = None
             try:
-                raw_df = yf.download(ticker, period="6mo", session=yf_session)
+                # Intraday data fetch (1h interval)
+                raw_df = yf.download(ticker, period="730d", interval="1h", session=yf_session)
                 if isinstance(raw_df.columns, pd.MultiIndex):
                     raw_df.columns = raw_df.columns.get_level_values(0)
                 if not raw_df.empty:
@@ -53,10 +54,11 @@ def run_multi_asset_cycle():
 
             if features_df is None or features_df.empty:
                 features_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', 'data', safe_ticker, 'features.csv'))
-                print(f"Falling back to cached CSV for {ticker}")
+                print(f"WARNING: Intraday yf fetch failed. Falling back to cached Daily CSV for {ticker}. Model may be less accurate intraday.")
                 features_df = pd.read_csv(features_path, index_col='Date', parse_dates=True)
                 features_df.ffill(inplace=True)
                 features_df.fillna(0, inplace=True)
+            
             today_close = float(features_df['Close'].iloc[-1])
             current_prices[ticker] = today_close
             

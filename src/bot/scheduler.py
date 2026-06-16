@@ -21,12 +21,22 @@ def trigger_retrainer_heartbeat():
     except Exception as e:
         print(f"Failed to trigger heartbeat: {e}")
 
+def trigger_continuous_learning():
+    print(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] Triggering Continuous Learning Fine-Tuning...")
+    try:
+        response = requests.post(f"{API_URL}/api/bot/continuous_learn")
+        print(f"Learning Result: {response.status_code} - {response.text}")
+    except Exception as e:
+        print(f"Failed to trigger learning: {e}")
+
 def setup_scheduler():
-    # In production, markets close at 4:00 PM EST (21:00 UTC).
-    # We run the cycle at 4:15 PM EST (21:15 UTC).
-    schedule.every().day.at("21:15").do(trigger_daily_cycle)
+    # Intraday Trading: Run the bot every 1 hour
+    schedule.every(1).hours.do(trigger_daily_cycle)
 
-    # We run the Heartbeat monitor at 5:00 PM EST (22:00 UTC)
-    schedule.every().day.at("22:00").do(trigger_retrainer_heartbeat)
+    # End-Of-Day Continuous Learning: Run at 4:30 PM EST (21:30 UTC)
+    schedule.every().day.at("21:30").do(trigger_continuous_learning)
 
-    print("Autonomous Scheduler Setup Complete. Attached to FastAPI Event Loop.")
+    # Weekly Macro Retrainer Heartbeat: Check if a full retrain is needed
+    schedule.every().sunday.at("00:00").do(trigger_retrainer_heartbeat)
+
+    print("Intraday & Continuous Learning Scheduler Setup Complete.")

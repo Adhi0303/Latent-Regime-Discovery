@@ -390,13 +390,23 @@ def force_bot_run():
 
 @app.post("/api/bot/retrain")
 def force_retrain_check():
-    """WebHook to manually trigger the Auto-Retrainer Heartbeat Monitor."""
+    """WebHook to manually trigger the Auto-Retrainer Heartbeat Monitor (Macro)."""
     from src.bot.retrainer import check_and_retrain
     try:
         res = check_and_retrain()
         return res
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Retrainer check failed: {e}")
+
+@app.post("/api/bot/continuous_learn")
+def force_continuous_learn():
+    """WebHook to manually trigger the Intraday End-Of-Day Continuous Learning fine-tuning."""
+    from src.bot.continuous_learning import run_eod_retraining
+    try:
+        run_eod_retraining()
+        return {"status": "success", "message": "Continuous learning epoch completed."}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Continuous learning failed: {e}")
 
 @app.get("/api/sentiment")
 def get_sentiment(ticker: str = "^GSPC"):

@@ -473,8 +473,8 @@ export default function Dashboard() {
                 <LineChart 
                   data={chartData} 
                   margin={{ top: 10, right: 10, left: 10, bottom: 0 }}
-                  onMouseDown={(e) => e && setZoomRefArea({ ...zoomRefArea, left: e.activeLabel || null })}
-                  onMouseMove={(e) => e && zoomRefArea.left && setZoomRefArea({ ...zoomRefArea, right: e.activeLabel || null })}
+                  onMouseDown={(e) => e && setZoomRefArea({ ...zoomRefArea, left: e.activeLabel ? String(e.activeLabel) : null })}
+                  onMouseMove={(e) => e && zoomRefArea.left && setZoomRefArea({ ...zoomRefArea, right: e.activeLabel ? String(e.activeLabel) : null })}
                   onMouseUp={() => {
                     if (zoomRefArea.left && zoomRefArea.right && zoomRefArea.left !== zoomRefArea.right) {
                       setZoomDomain({ left: zoomRefArea.left, right: zoomRefArea.right });

@@ -572,8 +572,10 @@ export default function Dashboard() {
              <div className="text-red-400">Failed to run backtest simulation.</div>
           )}
         </div>
+        </div>
       ) : viewMode === "bot" ? (
         /* Multi-Asset Portfolio Bot View */
+        <div className="flex-1 overflow-y-auto pr-2">
         <div className="space-y-6">
            <div className="flex justify-between items-end mb-6">
              <div>
@@ -688,7 +690,7 @@ export default function Dashboard() {
              <div className="text-gray-400 mt-10 text-center">Failed to load portfolio.</div>
            )}
         </div>
-      </div>
+        </div>
       ) : (
         /* Scoreboard View */
         <div className="flex-1 overflow-y-auto pr-2">

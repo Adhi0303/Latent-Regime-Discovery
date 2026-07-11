@@ -2,7 +2,7 @@ fastapi==0.109.2
 uvicorn==0.27.1
 pandas==2.2.0
 numpy==1.26.4
-yfinance==0.2.36
+yfinance==1.5.1
 torch==2.2.0
 scikit-learn==1.4.0
 hmmlearn==0.3.0

@@ -107,13 +107,23 @@ def predict_regime(ticker: str = "^GSPC", period: str = "5y"):
     
     features_df = None
     try:
-        raw_df = yf.download(ticker, period=period, session=yf_session, timeout=5)
-        if isinstance(raw_df.columns, pd.MultiIndex):
-            raw_df.columns = raw_df.columns.get_level_values(0)
-        if not raw_df.empty:
-            features_df = engineer_features_df(raw_df.copy())
+        import time
+        import random
+        retries = 3
+        for attempt in range(retries):
+            try:
+                raw_df = yf.download(ticker, period=period, interval="1d", session=yf_session, timeout=10, progress=False)
+                if isinstance(raw_df.columns, pd.MultiIndex):
+                    raw_df.columns = raw_df.columns.get_level_values(0)
+                if not raw_df.empty:
+                    features_df = engineer_features_df(raw_df.copy())
+                    break
+            except Exception as yf_err:
+                print(f"yfinance failed for {ticker} (Attempt {attempt+1}/{retries}): {yf_err}")
+                if attempt < retries - 1:
+                    time.sleep(random.uniform(2, 5) * (2 ** attempt))
     except Exception as e:
-        print(f"yfinance failed for {ticker}: {e}. Falling back to cached CSV.")
+        print(f"yfinance total failure for {ticker}: {e}. Falling back to cached CSV.")
     
     # Fall back to pre-cached CSV if live fetch failed
     if features_df is None or features_df.empty:
@@ -462,13 +472,23 @@ def get_forecast(ticker: str = "^GSPC"):
         
         features_df = None
         try:
-            raw_df = yf.download(ticker, period="6mo", session=yf_session, timeout=5)
-            if isinstance(raw_df.columns, pd.MultiIndex):
-                raw_df.columns = raw_df.columns.get_level_values(0)
-            if not raw_df.empty:
-                features_df = engineer_features_df(raw_df.copy())
+            import time
+            import random
+            retries = 3
+            for attempt in range(retries):
+                try:
+                    raw_df = yf.download(ticker, period="6mo", interval="1d", session=yf_session, timeout=10, progress=False)
+                    if isinstance(raw_df.columns, pd.MultiIndex):
+                        raw_df.columns = raw_df.columns.get_level_values(0)
+                    if not raw_df.empty:
+                        features_df = engineer_features_df(raw_df.copy())
+                        break
+                except Exception as yf_err:
+                    print(f"yfinance failed for {ticker} in forecast (Attempt {attempt+1}/{retries}): {yf_err}")
+                    if attempt < retries - 1:
+                        time.sleep(random.uniform(2, 5) * (2 ** attempt))
         except Exception as e:
-            print(f"yfinance failed for {ticker} in forecast: {e}. Falling back to cached CSV.")
+            print(f"yfinance total failure for {ticker} in forecast: {e}. Falling back to cached CSV.")
         
         if features_df is None or features_df.empty:
             if not os.path.exists(features_path_fcast):

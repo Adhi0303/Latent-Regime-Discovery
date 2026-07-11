@@ -41,23 +41,28 @@ def run_multi_asset_cycle():
             continue
             
         try:
+            import time
+            import random
             features_df = None
-            try:
-                # Intraday data fetch (1h interval)
-                raw_df = yf.download(ticker, period="730d", interval="1h", session=yf_session)
-                if isinstance(raw_df.columns, pd.MultiIndex):
-                    raw_df.columns = raw_df.columns.get_level_values(0)
-                if not raw_df.empty:
-                    features_df = engineer_features_df(raw_df.copy())
-            except Exception as yf_err:
-                print(f"yfinance fetch failed for {ticker}: {yf_err}")
-
+            retries = 3
+            
+            for attempt in range(retries):
+                try:
+                    # Daily data fetch
+                    raw_df = yf.download(ticker, period="5y", interval="1d", session=yf_session, progress=False)
+                    if isinstance(raw_df.columns, pd.MultiIndex):
+                        raw_df.columns = raw_df.columns.get_level_values(0)
+                    if not raw_df.empty:
+                        features_df = engineer_features_df(raw_df.copy())
+                        break
+                except Exception as yf_err:
+                    print(f"yfinance fetch failed for {ticker} (Attempt {attempt+1}/{retries}): {yf_err}")
+                    if attempt < retries - 1:
+                        time.sleep(random.uniform(2, 5) * (2 ** attempt)) # Exponential backoff
+            
             if features_df is None or features_df.empty:
-                features_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', 'data', safe_ticker, 'features.csv'))
-                print(f"WARNING: Intraday yf fetch failed. Falling back to cached Daily CSV for {ticker}. Model may be less accurate intraday.")
-                features_df = pd.read_csv(features_path, index_col='Date', parse_dates=True)
-                features_df.ffill(inplace=True)
-                features_df.fillna(0, inplace=True)
+                print(f"ERROR: Could not fetch data for {ticker} after {retries} attempts. Skipping this ticker for today to avoid static data.")
+                continue
             
             today_close = float(features_df['Close'].iloc[-1])
             current_prices[ticker] = today_close

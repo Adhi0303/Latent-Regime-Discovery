@@ -30,13 +30,17 @@ def trigger_continuous_learning():
         print(f"Failed to trigger learning: {e}")
 
 def setup_scheduler():
-    # Intraday Trading: Run the bot every 1 hour
-    schedule.every(1).hours.do(trigger_daily_cycle)
+    # Daily Trading: Run the bot every weekday at 21:30 UTC (After Market Close)
+    schedule.every().monday.at("21:30").do(trigger_daily_cycle)
+    schedule.every().tuesday.at("21:30").do(trigger_daily_cycle)
+    schedule.every().wednesday.at("21:30").do(trigger_daily_cycle)
+    schedule.every().thursday.at("21:30").do(trigger_daily_cycle)
+    schedule.every().friday.at("21:30").do(trigger_daily_cycle)
 
-    # End-Of-Day Continuous Learning: Run at 4:30 PM EST (21:30 UTC)
-    schedule.every().day.at("21:30").do(trigger_continuous_learning)
+    # Weekly Continuous Learning: Run at 22:00 UTC on Friday
+    schedule.every().friday.at("22:00").do(trigger_continuous_learning)
 
     # Weekly Macro Retrainer Heartbeat: Check if a full retrain is needed
     schedule.every().sunday.at("00:00").do(trigger_retrainer_heartbeat)
 
-    print("Intraday & Continuous Learning Scheduler Setup Complete.")
+    print("Daily Trading & Weekly Learning Scheduler Setup Complete.")

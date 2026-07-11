@@ -38,13 +38,26 @@ def run_eod_retraining():
             
         print(f"\nRetraining {ticker}...")
         try:
-            # 1. Fetch recent data (e.g., last 30 days of hourly data)
-            raw_df = yf.download(ticker, period="30d", interval="1h", progress=False)
-            if isinstance(raw_df.columns, pd.MultiIndex):
-                raw_df.columns = raw_df.columns.get_level_values(0)
+            # 1. Fetch recent data (e.g., last 1 year of daily data)
+            import time
+            import random
+            retries = 3
+            raw_df = pd.DataFrame()
+            
+            for attempt in range(retries):
+                try:
+                    raw_df = yf.download(ticker, period="1y", interval="1d", progress=False)
+                    if isinstance(raw_df.columns, pd.MultiIndex):
+                        raw_df.columns = raw_df.columns.get_level_values(0)
+                    if not raw_df.empty:
+                        break
+                except Exception as yf_err:
+                    print(f"yfinance fetch failed for {ticker} (Attempt {attempt+1}/{retries}): {yf_err}")
+                    if attempt < retries - 1:
+                        time.sleep(random.uniform(2, 5) * (2 ** attempt))
             
             if raw_df.empty:
-                print(f"Skipping {ticker} - no recent data fetched.")
+                print(f"Skipping {ticker} - no recent data fetched after {retries} attempts.")
                 continue
                 
             features_df = engineer_features_df(raw_df.copy())
@@ -79,10 +92,10 @@ def run_eod_retraining():
             seq_length = 21
             X_seq, y_seq = create_sequences(X_scaled, y_scaled, seq_length)
             
-            # We only want to train on the MOST RECENT sequences (e.g. today's hours)
-            # A typical trading day has 7 hourly candles. Let's train on the last 24 sequences
-            train_X = torch.tensor(X_seq[-24:], dtype=torch.float32).to(device)
-            train_y = torch.tensor(y_seq[-24:], dtype=torch.float32).to(device)
+            # We only want to train on the MOST RECENT sequences (e.g. this week/month)
+            # A typical trading month has ~20 trading days. Let's train on the last 20 daily sequences.
+            train_X = torch.tensor(X_seq[-20:], dtype=torch.float32).to(device)
+            train_y = torch.tensor(y_seq[-20:], dtype=torch.float32).to(device)
             
             if len(train_X) == 0:
                 print(f"Not enough data to retrain {ticker}.")
